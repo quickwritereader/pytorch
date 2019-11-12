@@ -1332,6 +1332,7 @@ if (NOT INTERN_BUILD_MOBILE)
     add_compile_options(-DUSE_GCC_GET_CPUID)
   ENDIF()
 
+  FIND_PACKAGE(VSX) # checks VSX
   FIND_PACKAGE(AVX) # checks AVX and AVX2
 
   # we don't set -mavx and -mavx2 flags globally, but only for specific files

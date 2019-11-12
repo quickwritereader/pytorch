@@ -9,7 +9,7 @@
 #include <ATen/cpu/vec256/vec256_qint.h>
 #include <ATen/cpu/vec256/vec256_complex_float.h>
 #include <ATen/cpu/vec256/vec256_complex_double.h>
-
+#include <ATen/cpu/vec256/vec256_common_vsx.h>
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>

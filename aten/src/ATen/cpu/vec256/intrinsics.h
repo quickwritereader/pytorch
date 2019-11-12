@@ -22,6 +22,28 @@
         (defined(__VEC__) || defined(__ALTIVEC__))
 /* XLC or GCC-compatible compiler, targeting PowerPC with VMX/VSX */
 #include <altivec.h>
+#define offset0   0
+#define offset16  16
+#define offset32 32
+#define offset48 48
+#define offset64 64
+#define offset80 80
+#define offset96 96
+#define offset112 112
+#define __inline_attrs  __attribute__((__always_inline__))
+using __vd = __vector double;
+using __vf = __vector float;
+using __vchar = __vector unsigned char;
+using __vchari = __vector signed char;
+using __vcharb = __vector bool char;
+using __vllb = __vector bool long long;
+using  __vlli = __vector signed long long;
+using __vib = __vector bool int;
+using __vui = __vector unsigned  int;
+using __vi = __vector signed int;
+using __vshi = __vector signed short;
+using __vsh = __vector unsigned short;
+using __vshb = __vector bool short;
 #elif defined(__GNUC__) && defined(__SPE__)
 /* GCC-compatible compiler, targeting PowerPC with SPE */
 #include <spe.h>
