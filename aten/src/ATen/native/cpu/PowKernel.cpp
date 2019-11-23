@@ -162,14 +162,16 @@ void pow_tensor_scalar_kernel(TensorIterator& iter, Scalar exp_scalar) {
           case 2:
             cpu_kernel(iter,
               [](scalar_t base) -> scalar_t {
-                return base * base;
+              auto base_d = static_cast<long double>(base);
+              return static_cast<scalar_t>(base_d * base_d );
               }
             );
             break;
           case 3:
             cpu_kernel(iter,
               [](scalar_t base) -> scalar_t {
-                return base * base * base;
+              auto base_d = static_cast<long double>(base);
+              return static_cast<scalar_t>(base_d * base_d * base_d);
               }
             );
             break;
@@ -189,13 +191,15 @@ void pow_tensor_scalar_kernel(TensorIterator& iter, Scalar exp_scalar) {
         if (exp == 2) {
           cpu_kernel(iter,
             [](scalar_t base) -> scalar_t {
-              return base * base;
+            auto base_d = static_cast<long double>(base);
+            return static_cast<scalar_t>(base_d * base_d );
             }
           );
         } else if (exp == 3) {
           cpu_kernel(iter,
             [](scalar_t base) -> scalar_t {
-              return base * base * base;
+            auto base_d = static_cast<long double>(base);
+            return static_cast<scalar_t>(base_d * base_d * base_d);
             }
           );
         } else if (exp == 0.5) {

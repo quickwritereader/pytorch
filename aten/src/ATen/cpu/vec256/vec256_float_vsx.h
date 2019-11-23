@@ -283,7 +283,7 @@ class Vec256<float> {
     return map(calc_erfinv);
   }
 
-   Vec256<float> angle() const {
+  Vec256<float> angle() const {
     return Vec256<float>{0};
   }
   Vec256<float> real() const {
@@ -791,10 +791,17 @@ class Vec256<float> {
     return Vec256<float>{vec_sqrt(_vec0), vec_sqrt(_vec1)};
   }
   Vec256<float> __inline_attrs reciprocal() const {
-    return Vec256<float>{vec_re(_vec0), vec_re(_vec1)};
+    const __vf one = vec_splats(1.f);
+    return Vec256<float>{
+        vec_div(
+            one, _vec0), // vec_re(_vec0) - is estimated calc so we dont use it
+        vec_div(one, _vec1)};
   }
   Vec256<float> __inline_attrs rsqrt() const {
-    return Vec256<float>{vec_rsqrt(_vec0), vec_rsqrt(_vec1)};
+    const __vf one = vec_splats(1.f);
+    return Vec256<float>{
+        vec_div(one, vec_sqrt(_vec0)), // vec_rsqrt- is estimated rsqrt
+        vec_div(one, vec_sqrt(_vec1))};
   }
 
   Vec256<float> __inline_attrs pow(const Vec256<float>& pow_exp) const {
