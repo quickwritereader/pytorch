@@ -29,7 +29,7 @@ class Vec256<double> {
  public:
   using value_type = double;
   using vec_internal_type = __vd;
-  static constexpr int size() {
+  static constexpr size_t size() {
     return 4;
   }
   Vec256() {}
@@ -50,28 +50,28 @@ class Vec256<double> {
     return _vec1;
   }
 
-  template <int64_t mask>
+  template <uint64_t mask>
   static c10::guts::enable_if_t<mask == 0, Vec256<double>> __inline_attrs
   blend(const Vec256<double>& a, const Vec256<double>& b) {
     return a;
   }
 
-  template <int64_t mask>
+  template <uint64_t mask>
   static c10::guts::enable_if_t<mask == 3, Vec256<double>> __inline_attrs
   blend(const Vec256<double>& a, const Vec256<double>& b) {
     return Vec256<double>{b._vec0, a._vec1};
   }
 
-  template <int64_t mask>
+  template <uint64_t mask>
   static c10::guts::enable_if_t<(mask & 15) == 15, Vec256<double>> __inline_attrs
   blend(const Vec256<double>& a, const Vec256<double>& b) {
     return b;
   }
 
-  template <int64_t mask>
+  template <uint64_t mask>
   static c10::guts::enable_if_t<(mask > 0 && mask < 3), Vec256<double>>
       __inline_attrs blend(const Vec256<double>& a, const Vec256<double>& b) {
-    // here I am using intel style mask number
+    
     constexpr uint64_t g0 = (mask & 1) * 0xffffffffffffffff;
     constexpr uint64_t g1 = ((mask & 2) >> 1) * 0xffffffffffffffff;
     const __vllb mask_1st = (__vllb){g0, g1};
@@ -79,10 +79,10 @@ class Vec256<double> {
                           a._vec1};
   }
 
-  template <int64_t mask>
+  template <uint64_t mask>
   static c10::guts::enable_if_t<(mask > 3) && (mask & 3) == 0, Vec256<double>>
       __inline_attrs blend(const Vec256<double>& a, const Vec256<double>& b) {
-    // here I am using intel style mask number
+    
     constexpr uint64_t g0_2 = ((mask & 4) >> 2) * 0xffffffffffffffff;
     constexpr uint64_t g1_2 = ((mask & 8) >> 3) * 0xffffffffffffffff;
 
@@ -91,12 +91,12 @@ class Vec256<double> {
                           (__vd)vec_sel(a._vec1, b._vec1, (__vllb)mask_2nd)};
   }
 
-  template <int64_t mask>
+  template <uint64_t mask>
   static c10::guts::enable_if_t<
       (mask > 3) && (mask & 3) != 0 && (mask & 15) != 15,
       Vec256<double>>
       __inline_attrs blend(const Vec256<double>& a, const Vec256<double>& b) {
-    // here I am using intel style mask number
+    
     constexpr uint64_t g0 = (mask & 1) * 0xffffffffffffffff;
     constexpr uint64_t g1 = ((mask & 2) >> 1) * 0xffffffffffffffff;
     constexpr uint64_t g0_2 = ((mask & 4) >> 2) * 0xffffffffffffffff;
@@ -113,7 +113,7 @@ class Vec256<double> {
       const Vec256<double>& b,
       const Vec256<double>& mask) {
     // the mask used here returned by comparision of vec256
-    // assuming this we can convert avx _mm256_blendv_pd to vec_sel
+
     return Vec256<double>{vec_sel(a._vec0, b._vec0, mask._vecb0),
                           vec_sel(a._vec1, b._vec1, mask._vecb1)};
   }
@@ -124,7 +124,7 @@ class Vec256<double> {
   static Vec256<double> __inline_attrs
   set(const Vec256<double>& a,
       const Vec256<double>& b,
-      int64_t count = size()) {
+      size_t count = size()) {
     switch (count) {
       case 0:
         return a;
@@ -138,34 +138,32 @@ class Vec256<double> {
 
     return b;
   }
-  static Vec256<double> __inline_attrs
-  loadu(const void* ptr, int64_t count = size()) {
-    if (count == size()) {
-      return Vec256<double>{
-          vec_vsx_ld(offset0, reinterpret_cast<const double*>(ptr)),
-          vec_vsx_ld(offset16, reinterpret_cast<const double*>(ptr))};
-    }
+  static Vec256<value_type> __inline_attrs
+      loadu(const void* ptr, size_t count = size()) {
+      if (count == size()) {
+          return Vec256<value_type>{
+              vec_vsx_ld(offset0, reinterpret_cast<const value_type*>(ptr)),
+                  vec_vsx_ld(offset16, reinterpret_cast<const value_type*>(ptr))};
+      }
 
-    __at_align32__ double tmp_values[size()];
-    __vd* vtmp = reinterpret_cast<__vd*>(tmp_values);
-    std::memcpy(
-        tmp_values,
-        reinterpret_cast<const double*>(ptr),
-        count * sizeof(double));
+      __at_align32__ value_type tmp_values[size()];
+      std::memcpy(tmp_values, ptr, std::min(count,size()) * sizeof(value_type));
 
-    return Vec256<double>{vtmp[0], vtmp[1]};
+      return Vec256<value_type>{
+          vec_vsx_ld(offset0, tmp_values),
+              vec_vsx_ld(offset16, tmp_values)};
   }
-  void __inline_attrs store(void* ptr, int count = size()) const {
-    if (count == size()) {
-      vec_vsx_st(_vec0, offset0, reinterpret_cast<double*>(ptr));
-      vec_vsx_st(_vec1, offset16, reinterpret_cast<double*>(ptr));
-    } else if (count > 0) {
-      __at_align32__ double tmp_values[size()];
-      __vd* vtmp = reinterpret_cast<__vd*>(tmp_values);
-      vtmp[0] = _vec0;
-      vtmp[1] = _vec1;
-      std::memcpy(ptr, tmp_values, count * sizeof(double));
-    }
+  void __inline_attrs store(void* ptr, size_t count = size()) const {
+      if (count == size()) {
+          vec_vsx_st(_vec0, offset0, reinterpret_cast<value_type*>(ptr));
+          vec_vsx_st(_vec1, offset16, reinterpret_cast<value_type*>(ptr));
+      }
+      else if (count > 0) {
+          __at_align32__ value_type tmp_values[size()];
+          vec_vsx_st(_vec0, offset0, tmp_values);
+          vec_vsx_st(_vec1, offset16, tmp_values);
+          std::memcpy(ptr, tmp_values, std::min(count,size()) * sizeof(value_type));
+      }
   }
   const double& operator[](int idx) const = delete;
   double& operator[](int idx) = delete;

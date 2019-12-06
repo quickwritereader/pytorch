@@ -143,6 +143,7 @@ DEFINE_CLAMP_FUNCS(int64_t)
 DEFINE_CLAMP_FUNCS(float)
 DEFINE_CLAMP_FUNCS(double)
 
+
 DEFINE_EMULATE_BINARY_FUNCS(operator/, int32_t, /)
 DEFINE_EMULATE_BINARY_FUNCS(operator/, int16_t, /)
 DEFINE_EMULATE_BINARY_FUNCS(operator/, c10::qint32, /)
@@ -241,36 +242,29 @@ Vec256<int32_t> inline __inline_attrs convert_to_int_of_same_size<float>(
 
 template <>
 inline void convert(const int32_t* src, float* dst, int64_t n) {
-  int64_t i;
+
   // int32_t and float have same size
-#pragma unroll
-  for (i = 0; i <= (n - Vec256<int32_t>::size());
-       i += Vec256<int32_t>::size()) {
+  size_t N = n;
+  size_t NE = N & (~(Vec256<int32_t>::size()-1));
+  for (size_t i = 0; i < NE; i += Vec256<int32_t>::size()) {
     const int32_t* src_a = src + i;
     float* dst_a = dst + i;
     __vi input_vec0 = vec_vsx_ld(offset0, reinterpret_cast<const __vi*>(src_a));
-    __vi input_vec1 =
-        vec_vsx_ld(offset16, reinterpret_cast<const __vi*>(src_a));
-    vec_vsx_st(vec_float(input_vec0), offset0, reinterpret_cast<float*>(dst_a));
-    vec_vsx_st(
-        vec_float(input_vec1), offset16, reinterpret_cast<float*>(dst_a));
+    __vi input_vec1 = vec_vsx_ld(offset16, reinterpret_cast<const __vi*>(src_a));
+    vec_vsx_st(vec_float(input_vec0), offset0, dst_a);
+    vec_vsx_st( vec_float(input_vec1), offset16, dst_a);
   }
-#ifndef _MSC_VER
-#pragma unroll
-#endif
-  for (; i < n; i++) {
+ 
+  for (size_t i=NE; i < N; i++) {
     dst[i] = static_cast<float>(src[i]);
   }
 }
 
 template <>
 inline void convert(const int64_t* src, double* dst, int64_t n) {
-  int64_t i;
-  // int64_t and double have same size
-
-#pragma unroll
-  for (i = 0; i <= (n - Vec256<int64_t>::size());
-       i += Vec256<int64_t>::size()) {
+  size_t N = n;
+  size_t NE = N & (~(Vec256<int64_t>::size() - 1));
+  for (size_t i = 0; i < NE; i += Vec256<int64_t>::size()) {
     const int64_t* src_a = src + i;
     double* dst_a = dst + i;
     __vlli input_vec0 =
@@ -282,8 +276,8 @@ inline void convert(const int64_t* src, double* dst, int64_t n) {
     vec_vsx_st(
         vec_double(input_vec1), offset16, reinterpret_cast<double*>(dst_a));
   }
-#pragma unroll
-  for (; i < n; i++) {
+
+  for (size_t i=NE; i < N; i++) {
     dst[i] = static_cast<double>(src[i]);
   }
 }

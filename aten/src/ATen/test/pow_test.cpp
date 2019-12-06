@@ -125,7 +125,6 @@ void tensor_pow_scalar(const Vals vals, const Pows pows) {
     for (const auto val : vals) {
       const auto exp = static_cast<T>(
         std::pow(static_cast<long double>(val), static_cast<double>(pow)));
-      
       const auto act_pow = actual_pow[i].template item<T>();
       assert_eq(val, act_pow, exp);
 

@@ -223,7 +223,7 @@ void pow_tensor_scalar_kernel(TensorIterator& iter, Scalar exp_scalar) {
         } else if (exp == -2) {
           cpu_kernel(iter,
             [](scalar_t base) -> scalar_t {
-              return 1.0 / (base * base);
+            return 1.0 / static_cast<long double>(base * base);
             }
           );
         } else {
