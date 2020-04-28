@@ -24,6 +24,7 @@ void initializeLayouts() {
   registerLayoutObject((THPLayout*)strided_layout, at::Backend::MSNPU);
   registerLayoutObject((THPLayout*)strided_layout, at::Backend::XLA);
   registerLayoutObject((THPLayout*)strided_layout, at::Backend::QuantizedCPU);
+  registerLayoutObject((THPLayout*)strided_layout, at::Backend::QuantizedCUDA);
 
   PyObject *sparse_coo_layout = THPLayout_New(at::Layout::Sparse, "torch.sparse_coo");
   Py_INCREF(sparse_coo_layout);
@@ -39,8 +40,6 @@ void initializeLayouts() {
     throw python_error();
   }
   registerLayoutObject((THPLayout*)mkldnn_layout, at::Backend::MkldnnCPU);
-  registerLayoutObject((THPLayout*)strided_layout, at::Backend::ComplexCPU);
-  registerLayoutObject((THPLayout*)strided_layout, at::Backend::ComplexCUDA);
 }
 
 }} // namespace torch::utils

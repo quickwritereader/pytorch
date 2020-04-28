@@ -1,6 +1,7 @@
 #pragma once
 
-#include <torch/serialize.h>
+#include <torch/csrc/utils/future.h>
+#include <torch/types.h>
 #include <vector>
 
 namespace torch {
@@ -44,7 +45,6 @@ enum MessageType {
   CLEANUP_AUTOGRAD_CONTEXT_RESP = 20,
 
   // Other internal message types
-  SHUTDOWN = 50,
   EXCEPTION = 55,
   UNKNOWN = 60
 };
@@ -114,6 +114,21 @@ class TORCH_API Message final {
   MessageType type_ = MessageType::UNKNOWN;
   int64_t id_ = -1;
 };
+
+// Create a response Message of type Exception.
+// The exception string representation will be used as the message's payload.
+// A message ID corresponding to the request that resulted in this response can
+// be provided for matching requests/responses.
+TORCH_API Message createExceptionResponse(const std::exception& e, int64_t id);
+
+// Create a response Message of type Exception.
+// The passed in string representation will be used as the message's payload.
+// A message ID corresponding to the request that resulted in this response can
+// be provided for matching requests/responses.
+TORCH_API Message
+createExceptionResponse(const std::string& exceptionStr, int64_t id);
+
+typedef torch::utils::Future<Message> FutureMessage;
 
 } // namespace rpc
 } // namespace distributed

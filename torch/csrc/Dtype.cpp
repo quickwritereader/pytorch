@@ -8,6 +8,8 @@
 #include <torch/csrc/utils/tensor_dtypes.h>
 #include <torch/csrc/utils/tensor_types.h>
 
+#include <torch/csrc/Exceptions.h>
+
 PyObject * THPDtype_New(at::ScalarType scalar_type, const std::string& name)
 {
   AT_ASSERT(name.length() < DTYPE_NAME_LEN);
@@ -22,11 +24,31 @@ PyObject * THPDtype_New(at::ScalarType scalar_type, const std::string& name)
 
 PyObject *THPDtype_is_floating_point(THPDtype *self, PyObject *noargs)
 {
-  if (at::isFloatingType(self->scalar_type) || at::isComplexType(self->scalar_type)) {
+  if (at::isFloatingType(self->scalar_type)) {
     Py_RETURN_TRUE;
   } else {
     Py_RETURN_FALSE;
   }
+}
+
+PyObject *THPDtype_is_complex(THPDtype *self, PyObject *noargs)
+{
+  if (at::isComplexType(self->scalar_type)) {
+    Py_RETURN_TRUE;
+  } else {
+    Py_RETURN_FALSE;
+  }
+}
+
+PyObject *THPDtype_is_signed(THPDtype *self, PyObject *noargs)
+{
+  HANDLE_TH_ERRORS
+  if (at::isSignedType(self->scalar_type)) {
+    Py_RETURN_TRUE;
+  } else {
+    Py_RETURN_FALSE;
+  }
+  END_HANDLE_TH_ERRORS
 }
 
 PyObject *THPDtype_reduce(THPDtype *self, PyObject *noargs)
@@ -42,6 +64,8 @@ typedef PyObject *(*getter)(PyObject *, void *);
 
 static struct PyGetSetDef THPDtype_properties[] = {
   {"is_floating_point", (getter)THPDtype_is_floating_point, nullptr, nullptr, nullptr},
+  {"is_complex", (getter)THPDtype_is_complex, nullptr, nullptr, nullptr},
+  {"is_signed", (getter)THPDtype_is_signed, nullptr, nullptr, nullptr},
   {nullptr}
 };
 

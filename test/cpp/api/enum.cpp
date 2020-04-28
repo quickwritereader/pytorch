@@ -40,7 +40,14 @@ TEST(EnumTest, AllEnums) {
     torch::enumtype::kMean,
     torch::enumtype::kMax,
     torch::enumtype::kNone,
-    torch::enumtype::kBatchMean
+    torch::enumtype::kBatchMean,
+    torch::enumtype::kZeros,
+    torch::enumtype::kBorder,
+    torch::enumtype::kReflection,
+    torch::enumtype::kRNN_TANH,
+    torch::enumtype::kRNN_RELU,
+    torch::enumtype::kLSTM,
+    torch::enumtype::kGRU
   > v;
 
   TORCH_ENUM_PRETTY_PRINT_TEST(Linear)
@@ -70,4 +77,11 @@ TEST(EnumTest, AllEnums) {
   TORCH_ENUM_PRETTY_PRINT_TEST(Max)
   TORCH_ENUM_PRETTY_PRINT_TEST(None)
   TORCH_ENUM_PRETTY_PRINT_TEST(BatchMean)
+  TORCH_ENUM_PRETTY_PRINT_TEST(Zeros)
+  TORCH_ENUM_PRETTY_PRINT_TEST(Border)
+  TORCH_ENUM_PRETTY_PRINT_TEST(Reflection)
+  TORCH_ENUM_PRETTY_PRINT_TEST(RNN_TANH)
+  TORCH_ENUM_PRETTY_PRINT_TEST(RNN_RELU)
+  TORCH_ENUM_PRETTY_PRINT_TEST(LSTM)
+  TORCH_ENUM_PRETTY_PRINT_TEST(GRU)
 }

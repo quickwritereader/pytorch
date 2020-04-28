@@ -28,7 +28,7 @@ type_map = {
 all_types = type_map['floating_point'] + type_map['integral'] + type_map['quantized']
 type_map['all'] = all_types
 
-all_backends = ['CPU', 'CUDA', 'SparseCPU', 'SparseCUDA', 'MkldnnCPU', 'QuantizedCPU']
+all_backends = ['CPU', 'CUDA', 'SparseCPU', 'SparseCUDA', 'MkldnnCPU', 'QuantizedCPU', 'QuantizedCUDA']
 default_backends = ['CPU', 'CUDA']
 
 
@@ -44,7 +44,7 @@ def process_types_and_backends(option):
 
         backend_types = {}
         for backend in backends:
-            if backend == 'QuantizedCPU':
+            if backend in ('QuantizedCPU', 'QuantizedCUDA'):
                 backend_types[backend] = type_map['quantized']
             else:
                 backend_types[backend] = option.get('types', all_types)
@@ -71,14 +71,14 @@ def process_types_and_backends(option):
         if 'CPU' in backend_types:
             backend_types['CPU'].discard('Half')
 
-    # special case remove BFloat16 for cpu unless it is explicitly enabled
+    # special case remove BFloat16 for cpu and cuda unless it is explicitly enabled
     if not option.get('cpu_bfloat16', False):
         if 'CPU' in backend_types:
             backend_types['CPU'].discard('BFloat16')
 
-    # TODO: remove this hack once support for a bfloat16 tensor for CUDA is enabled
-    if 'CUDA' in backend_types:
-        backend_types['CUDA'].discard('BFloat16')
+    if not option.get('cuda_bfloat16', False):
+        if 'CUDA' in backend_types:
+            backend_types['CUDA'].discard('BFloat16')
 
     # special cases remove bool for cpu and cuda unless it is explicitly enabled
     if not option.get('cpu_bool', False):
@@ -91,7 +91,7 @@ def process_types_and_backends(option):
 
     # sort the result for easy reading
     for backend in backend_types.keys():
-        backend_types[backend] = sorted([type for type in backend_types[backend]])
+        backend_types[backend] = sorted(backend_types[backend])
     option['backend_types'] = backend_types
 
 

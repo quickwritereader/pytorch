@@ -1,4 +1,3 @@
-import sys
 import torch
 import torch._C as _C
 from torch._namedtensor_internals import update_names, check_serializing_named_tensor, resolve_ellipsis
@@ -14,13 +13,9 @@ import functools
 
 
 def _wrap_type_error_to_not_implemented(f):
-    from torch import _six
-    import inspect
-
     # functools.wraps doesn't work well with methods in python 2
     method_assignments = ('__name__', '__doc__')
-    assigned = (method_assignments if _six.PY2 and inspect.ismethoddescriptor(f)
-                else functools.WRAPPER_ASSIGNMENTS)
+    assigned = functools.WRAPPER_ASSIGNMENTS
 
     @functools.wraps(f, assigned=assigned)
     def wrapped(*args, **kwargs):
@@ -54,7 +49,10 @@ class Tensor(torch._C._TensorBase):
                     if self.qscheme() == torch.per_tensor_affine:
                         quantizer_params = self.qscheme(), self.q_scale(), self.q_zero_point()
                     elif self.qscheme() == torch.per_channel_affine:
-                        quantizer_params = self.qscheme(), self.q_per_channel_scales(), self.q_per_channel_zero_points(), self.q_per_channel_axis()
+                        quantizer_params = self.qscheme(), \
+                            self.q_per_channel_scales(), \
+                            self.q_per_channel_zero_points(), \
+                            self.q_per_channel_axis()
                     else:
                         raise RuntimeError("Unsupported qscheme {} in deepcopy".format(self.qscheme()))
                     new_tensor = torch._utils._rebuild_qtensor(
@@ -102,8 +100,8 @@ class Tensor(torch._C._TensorBase):
                 # when/if we get multi-axis quantized tensors in the future, the shape
                 # is recoverable from the main tensor shape
                 quantizer_params = (torch.per_channel_affine,
-                                    [e.item() for e in self.q_per_channel_scales().reshape(-1)],
-                                    [e.item() for e in self.q_per_channel_zero_points().reshape(-1)],
+                                    self.q_per_channel_scales(),
+                                    self.q_per_channel_zero_points(),
                                     self.q_per_channel_axis())
             else:
                 raise RuntimeError("Serialization is not supported for tensors of type {}".format(self.qscheme()))
@@ -152,17 +150,8 @@ class Tensor(torch._C._TensorBase):
         self.requires_grad, _, self._backward_hooks = state
 
     def __repr__(self):
-        # All strings are unicode in Python 3, while we have to encode unicode
-        # strings in Python2. If we can't, let python decide the best
-        # characters to replace unicode characters with.
-        if sys.version_info > (3,):
-            return torch._tensor_str._str(self)
-        else:
-            if hasattr(sys.stdout, 'encoding'):
-                return torch._tensor_str._str(self).encode(
-                    sys.stdout.encoding or 'UTF-8', 'replace')
-            else:
-                return torch._tensor_str._str(self).encode('UTF-8', 'replace')
+        # All strings are unicode in Python 3.
+        return torch._tensor_str._str(self)
 
     def backward(self, gradient=None, retain_graph=None, create_graph=False):
         r"""Computes the gradient of current tensor w.r.t. graph leaves.
@@ -288,10 +277,10 @@ class Tensor(torch._C._TensorBase):
 
     def retain_grad(self):
         r"""Enables .grad attribute for non-leaf Tensors."""
-        if self.grad_fn is None:  # no-op for leaves
-            return
         if not self.requires_grad:
             raise RuntimeError("can't retain_grad on Tensor that has requires_grad=False")
+        if self.is_leaf:  # no-op for leaves
+            return
         if hasattr(self, 'retains_grad'):
             return
         weak_self = weakref.ref(self)
@@ -358,6 +347,12 @@ class Tensor(torch._C._TensorBase):
         return torch.stft(self, n_fft, hop_length, win_length, window, center,
                           pad_mode, normalized, onesided)
 
+    def istft(self, n_fft, hop_length=None, win_length=None, window=None,
+              center=True, normalized=False, onesided=True, length=None):
+        r"""See :func:`torch.istft`"""
+        return torch.istft(self, n_fft, hop_length, win_length, window, center,
+                           normalized, onesided, length)
+
     def resize(self, *sizes):
         warnings.warn("non-inplace resize is deprecated")
         from torch.autograd._functions import Resize
@@ -373,6 +368,12 @@ class Tensor(torch._C._TensorBase):
         """
         if isinstance(split_size, int):
             return super(Tensor, self).split(split_size, dim)
+        elif isinstance(split_size, Tensor):
+            try:
+                split_size = int(split_size)
+                return super(Tensor, self).split(split_size, dim)
+            except ValueError:
+                return super(Tensor, self).split_with_sizes(split_size, dim)
         else:
             return super(Tensor, self).split_with_sizes(split_size, dim)
 
@@ -394,7 +395,7 @@ class Tensor(torch._C._TensorBase):
         return _C._VariableFunctions.rsub(self, other)
 
     def __rdiv__(self, other):
-        if self.dtype.is_floating_point:
+        if self.dtype.is_floating_point or self.dtype.is_complex:
             return self.reciprocal() * other
         else:
             return (self.double().reciprocal() * other).type_as(self)
@@ -418,10 +419,7 @@ class Tensor(torch._C._TensorBase):
 
     @_wrap_type_error_to_not_implemented
     def __floordiv__(self, other):
-        result = self / other
-        if result.dtype.is_floating_point:
-            result = result.trunc()
-        return result
+        return torch.floor_divide(self, other)
 
     @_wrap_type_error_to_not_implemented
     def __rfloordiv__(self, other):
@@ -557,10 +555,16 @@ class Tensor(torch._C._TensorBase):
         itemsize = self.storage().element_size()
 
         shape = tuple(self.shape)
-        strides = tuple(s * itemsize for s in self.stride())
-        data = (self.data_ptr(), False)  # read-only is false
+        if self.is_contiguous():
+            # __cuda_array_interface__ v2 requires the strides to be omitted
+            # (either not set or set to None) for C-contiguous arrays.
+            strides = None
+        else:
+            strides = tuple(s * itemsize for s in self.stride())
+        data_ptr = self.data_ptr() if self.numel() > 0 else 0
+        data = (data_ptr, False)  # read-only is false
 
-        return dict(typestr=typestr, shape=shape, strides=strides, data=data, version=1)
+        return dict(typestr=typestr, shape=shape, strides=strides, data=data, version=2)
 
     def refine_names(self, *names):
         r"""Refines the dimension names of :attr:`self` according to :attr:`names`.
@@ -658,7 +662,7 @@ class Tensor(torch._C._TensorBase):
 
             >>> flat_imgs = torch.rand(32, 3 * 128 * 128, names=('N', 'features'))
             >>> imgs = flat_imgs.unflatten('features', (('C', 3), ('H', 128), ('W', 128)))
-            >>> imgs.names, images.shape
+            >>> imgs.names, imgs.shape
             (('N', 'C', 'H', 'W'), torch.Size([32, 3, 128, 128]))
 
         .. warning::
@@ -721,5 +725,29 @@ class Tensor(torch._C._TensorBase):
             return super(Tensor, self).rename_(names)
         else:
             return super(Tensor, self).rename(names)
+
+    @property
+    def grad(self):
+        """
+        This attribute is ``None`` by default and becomes a Tensor the first time a call to
+        :func:`backward` computes gradients for ``self``.
+        The attribute will then contain the gradients computed and future calls to
+        :func:`backward` will accumulate (add) gradients into it.
+        """
+        if self.requires_grad and not hasattr(self, "retains_grad") and not self.is_leaf and self._grad is None:
+            warnings.warn("The .grad attribute of a Tensor that is not a leaf Tensor is being accessed. Its .grad "
+                          "attribute won't be populated during autograd.backward(). If you indeed want the gradient "
+                          "for a non-leaf Tensor, use .retain_grad() on the non-leaf Tensor. If you access the "
+                          "non-leaf Tensor by mistake, make sure you access the leaf Tensor instead. See "
+                          "github.com/pytorch/pytorch/pull/30531 for more informations.")
+        return self._grad
+
+    @grad.setter
+    def grad(self, new_grad):
+        self._grad = new_grad
+
+    @grad.deleter
+    def grad(self):
+        del self._grad
 
     __module__ = 'torch'
