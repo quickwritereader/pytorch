@@ -2,7 +2,7 @@
 
 #include <ATen/cpu/vec256/intrinsics.h>
 #include <ATen/cpu/vec256/vec256_base.h>
-
+#include <ATen/cpu/vec256/vsx_macros.h>
 namespace at
 {
     namespace vec256
@@ -56,25 +56,25 @@ namespace at
 
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<mask == 0, Vec256<int64_t>> __inline_attrs
+                static std::endable_if_t<mask == 0, Vec256<int64_t>> __inline_attrs
                     blend(const Vec256<int64_t>& a, const Vec256<int64_t>& b) {
                     return a;
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<mask == 3, Vec256<int64_t>> __inline_attrs
+                static std::endable_if_t<mask == 3, Vec256<int64_t>> __inline_attrs
                     blend(const Vec256<int64_t>& a, const Vec256<int64_t>& b) {
                     return Vec256<int64_t> {b._vec0, a._vec1};
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<(mask & 15) == 15, Vec256<int64_t>>
+                static std::endable_if_t<(mask & 15) == 15, Vec256<int64_t>>
                     __inline_attrs blend(const Vec256<int64_t>& a, const Vec256<int64_t>& b) {
                     return b;
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<(mask > 0 && mask < 3), Vec256<int64_t>>
+                static std::endable_if_t<(mask > 0 && mask < 3), Vec256<int64_t>>
                     __inline_attrs blend(const Vec256<int64_t>& a, const Vec256<int64_t>& b) {
                     
                     constexpr uint64_t g0 = (mask & 1) * 0xffffffffffffffff;
@@ -89,7 +89,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<(mask > 3) && (mask & 3) == 0, Vec256<int64_t>>
+                static std::endable_if_t<(mask > 3) && (mask & 3) == 0, Vec256<int64_t>>
                     __inline_attrs blend(const Vec256<int64_t>& a, const Vec256<int64_t>& b) {
                     
                     constexpr uint64_t g0_2 = ((mask & 4) >> 2) * 0xffffffffffffffff;
@@ -105,7 +105,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<
+                static std::endable_if_t<
                     (mask > 3) && (mask & 3) != 0 && (mask & 15) != 15,
                     Vec256<int64_t>>
                     __inline_attrs blend(const Vec256<int64_t>& a, const Vec256<int64_t>& b) {
@@ -171,7 +171,7 @@ namespace at
                         };
                     }
 
-                    double tmp_values[size()] __at_align32__;
+                    __at_align32__ double tmp_values[size()] ;
                     std::memcpy(tmp_values, ptr, std::min(count, size()) * sizeof(value_type));
 
                     return Vec256<value_type> {
@@ -186,7 +186,7 @@ namespace at
                         vec_vsx_st((__vd)_vec1, offset16, dptr);
                     }
                     else if (count > 0) {
-                        __at_align32__ double tmp_values[size()];
+                        __at_align32__  double tmp_values[size()];
                         vec_vsx_st((__vd)_vec0, offset0, tmp_values);
                         vec_vsx_st((__vd)_vec1, offset16, tmp_values);
                         std::memcpy(ptr, tmp_values, std::min(count, size()) * sizeof(value_type));
@@ -277,6 +277,7 @@ namespace at
             public:
                 using value_type = int32_t;
                 using vec_internal_type = __vi;
+                using vec_internal_mask_type = __vib;
                 static constexpr size_t size() {
                     return 8;
                 }
@@ -304,7 +305,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<mask == 0, Vec256<int32_t>> __inline_attrs
+                static std::endable_if_t<mask == 0, Vec256<int32_t>> __inline_attrs
                     blend(const Vec256<int32_t>& a, const Vec256<int32_t>& b) {
                     
 
@@ -312,7 +313,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<(mask & 255) == 255, Vec256<int32_t>>
+                static std::endable_if_t<(mask & 255) == 255, Vec256<int32_t>>
                     __inline_attrs blend(const Vec256<int32_t>& a, const Vec256<int32_t>& b) {
                     
 
@@ -320,7 +321,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<mask == 15, Vec256<int32_t>> __inline_attrs
+                static std::endable_if_t<mask == 15, Vec256<int32_t>> __inline_attrs
                     blend(const Vec256<int32_t>& a, const Vec256<int32_t>& b) {
                     
 
@@ -328,7 +329,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<(mask > 0 && mask < 15), Vec256<int32_t>>
+                static std::endable_if_t<(mask > 0 && mask < 15), Vec256<int32_t>>
                     __inline_attrs blend(const Vec256<int32_t>& a, const Vec256<int32_t>& b) {
                     constexpr uint32_t g0 = (mask & 1) * 0xffffffff;
                     constexpr uint32_t g1 = ((mask & 2) >> 1) * 0xffffffff;
@@ -344,7 +345,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<
+                static std::endable_if_t<
                     (mask > 15 && (mask & 255) != 255 && ((mask & 15) == 15)),
                     Vec256<int32_t>>
                     __inline_attrs blend(const Vec256<int32_t>& a, const Vec256<int32_t>& b) {
@@ -365,7 +366,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<
+                static std::endable_if_t<
                     (mask > 15 && ((mask & 255) != 255) && ((mask & 15) == 0)),
                     Vec256<int32_t>>
                     __inline_attrs blend(const Vec256<int32_t>& a, const Vec256<int32_t>& b) {
@@ -384,7 +385,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<
+                static std::endable_if_t<
                     (mask > 15 && ((mask & 255) != 255) && ((mask & 15) != 0) &&
                     ((mask & 15) != 15)),
                     Vec256<int32_t>>
@@ -469,7 +470,7 @@ namespace at
                         };
                     }
 
-                    __at_align32__ value_type tmp_values[size()];
+                    __at_align32__  value_type tmp_values[size()];
                     std::memcpy(tmp_values, ptr, std::min(count, size()) * sizeof(value_type));
 
                     return Vec256<value_type> {
@@ -483,7 +484,7 @@ namespace at
                         vec_vsx_st(_vec1, offset16, reinterpret_cast<value_type*>(ptr));
                     }
                     else if (count > 0) {
-                        __at_align32__ value_type tmp_values[size()];
+                        __at_align32__  value_type tmp_values[size()];
                         vec_vsx_st(_vec0, offset0, tmp_values);
                         vec_vsx_st(_vec1, offset16, tmp_values);
                         std::memcpy(ptr, tmp_values, std::min(count, size()) * sizeof(value_type));
@@ -513,45 +514,22 @@ namespace at
                     return Vec256<int32_t> {vec_neg(_vec0), vec_neg(_vec1)};
                 }
 
-                Vec256<int32_t> __inline_attrs
-                    operator==(const Vec256<int32_t>& other) const {
-                    return Vec256<int32_t> {(__vib)vec_cmpeq(_vec0, other._vec0),
-                        (__vib)vec_cmpeq(_vec1, other._vec1)
-                    };
-                }
+                    DEFINE_CMP_OP(operator ==, int32_t, vec_cmpeq)
+                    DEFINE_CMP_OP(operator !=, int32_t, vec_cmpne)
+                    DEFINE_CMP_OP(operator <, int32_t, vec_cmplt)
+                    DEFINE_CMP_OP(operator <=, int32_t, vec_cmple)
+                    DEFINE_CMP_OP(operator >, int32_t, vec_cmpgt)
+                    DEFINE_CMP_OP(operator >=, int32_t, vec_cmpge)
+                    DEFINE_FRIEND_BINARY_OP(operator +, int32_t, vec_add)
+                    DEFINE_FRIEND_BINARY_OP(operator -, int32_t, vec_sub)
+                    DEFINE_FRIEND_BINARY_OP(operator *, int32_t, vec_mul)
+                    DEFINE_FRIEND_BINARY_OP(maximum, int32_t, vec_max)
+                    DEFINE_FRIEND_BINARY_OP(minimum, int32_t, vec_min)
+                    DEFINE_FRIEND_BITWISE_OP(operator &, int32_t, vec_and)
+                    DEFINE_FRIEND_BITWISE_OP(operator |, int32_t, vec_or)
+                    DEFINE_FRIEND_BITWISE_OP(operator ^, int32_t, vec_xor)
+                    DEFINE_FRIEND_TERNARY_OP_MASK(select, int32_t, vec_sel)
 
-                Vec256<int32_t> __inline_attrs
-                    operator!=(const Vec256<int32_t>& other) const {
-                    return Vec256<int32_t> {(__vib)vec_cmpne(_vec0, other._vec0),
-                        (__vib)vec_cmpne(_vec1, other._vec1)
-                    };
-                }
-
-                Vec256<int32_t> __inline_attrs operator<(const Vec256<int32_t>& other) const {
-                    return Vec256<int32_t> {(__vib)vec_cmplt(_vec0, other._vec0),
-                        (__vib)vec_cmplt(_vec1, other._vec1)
-                    };
-                }
-
-                Vec256<int32_t> __inline_attrs
-                    operator<=(const Vec256<int32_t>& other) const {
-                    return Vec256<int32_t> {(__vib)vec_cmple(_vec0, other._vec0),
-                        (__vib)vec_cmple(_vec1, other._vec1)
-                    };
-                }
-
-                Vec256<int32_t> __inline_attrs operator>(const Vec256<int32_t>& other) const {
-                    return Vec256<int32_t> {(__vib)vec_cmpgt(_vec0, other._vec0),
-                        (__vib)vec_cmpgt(_vec1, other._vec1)
-                    };
-                }
-
-                Vec256<int32_t> __inline_attrs
-                    operator>=(const Vec256<int32_t>& other) const {
-                    return Vec256<int32_t> {(__vib)vec_cmpge(_vec0, other._vec0),
-                        (__vib)vec_cmpge(_vec1, other._vec1)
-                    };
-                }
             };
 
             template <>
@@ -628,7 +606,7 @@ namespace at
 
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<mask == 0, Vec256<int16_t>> __inline_attrs
+                static std::endable_if_t<mask == 0, Vec256<int16_t>> __inline_attrs
                     blend(const Vec256<int16_t>& a, const Vec256<int16_t>& b) {
                     
 
@@ -636,7 +614,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<(mask & 65535) == 65535, Vec256<int16_t>>
+                static std::endable_if_t<(mask & 65535) == 65535, Vec256<int16_t>>
                     __inline_attrs blend(const Vec256<int16_t>& a, const Vec256<int16_t>& b) {
                     
 
@@ -644,7 +622,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<mask == 255, Vec256<int16_t>> __inline_attrs
+                static std::endable_if_t<mask == 255, Vec256<int16_t>> __inline_attrs
                     blend(const Vec256<int16_t>& a, const Vec256<int16_t>& b) {
                     
 
@@ -652,7 +630,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<(mask > 0 && mask < 255), Vec256<int16_t>>
+                static std::endable_if_t<(mask > 0 && mask < 255), Vec256<int16_t>>
                     __inline_attrs blend(const Vec256<int16_t>& a, const Vec256<int16_t>& b) {
                     constexpr int16_t g0 = (mask & 1) * 0xffff;
                     constexpr int16_t g1 = ((mask & 2) >> 1) * 0xffff;
@@ -670,7 +648,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<
+                static std::endable_if_t<
                     (mask > 255 && (mask & 65535) != 65535 && ((mask & 255) == 255)),
                     Vec256<int16_t>>
                     __inline_attrs blend(const Vec256<int16_t>& a, const Vec256<int16_t>& b) {
@@ -693,7 +671,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<
+                static std::endable_if_t<
                     (mask > 255 && ((mask & 65535) != 65535) && ((mask & 255) == 0)),
                     Vec256<int16_t>>
                     __inline_attrs blend(const Vec256<int16_t>& a, const Vec256<int16_t>& b) {
@@ -717,7 +695,7 @@ namespace at
                 }
 
                 template <uint64_t mask>
-                static c10::guts::enable_if_t<
+                static std::endable_if_t<
                     (mask > 255 && ((mask & 65535) != 65535) && ((mask & 255) != 0) &&
                     ((mask & 255) != 255)),
                     Vec256<int16_t>>
@@ -830,7 +808,7 @@ namespace at
                         };
                     }
 
-                    __at_align32__ value_type tmp_values[size()];
+                    __at_align32__  value_type tmp_values[size()];
                     std::memcpy(tmp_values, ptr, std::min(count, size()) * sizeof(value_type));
 
                     return Vec256<value_type> {
@@ -844,7 +822,7 @@ namespace at
                         vec_vsx_st(_vec1, offset16, reinterpret_cast<value_type*>(ptr));
                     }
                     else if (count > 0) {
-                        __at_align32__ value_type tmp_values[size()];
+                        __at_align32__  value_type tmp_values[size()];
                         vec_vsx_st(_vec0, offset0, tmp_values);
                         vec_vsx_st(_vec1, offset16, tmp_values);
                         std::memcpy(ptr, tmp_values, std::min(count, size()) * sizeof(value_type));

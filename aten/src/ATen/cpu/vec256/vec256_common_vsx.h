@@ -49,8 +49,8 @@ namespace {
   template <>                                                             \
   Vec256<operand_type> inline __inline_attrs fname(                       \
       const Vec256<operand_type>& a, const Vec256<operand_type>& b) {     \
-    __at_align32__ Vec256<operand_type>::value_type values_a[Vec256<operand_type>::size()];   \
-    __at_align32__ Vec256<operand_type>::value_type values_b[Vec256<operand_type>::size()];   \
+    __at_align32__  Vec256<operand_type>::value_type values_a[Vec256<operand_type>::size()];   \
+    __at_align32__  Vec256<operand_type>::value_type values_b[Vec256<operand_type>::size()];   \
     a.store(values_a);                                                    \
     b.store(values_b);                                                    \
     \
@@ -70,15 +70,7 @@ DEFINE_BINARY_OP(operator^, double, vec_xor)
 DEFINE_BINARY_OP(maximum, double, vec_max)
 DEFINE_BINARY_OP(minimum, double, vec_min)
 
-DEFINE_BINARY_OP(operator+, float, vec_add)
-DEFINE_BINARY_OP(operator-, float, vec_sub)
-DEFINE_BINARY_OP(operator*, float, vec_mul)
-DEFINE_BINARY_OP(operator/, float, vec_div)
-DEFINE_BINARY_OP(operator&, float, vec_and)
-DEFINE_BINARY_OP(operator|, float, vec_or)
-DEFINE_BINARY_OP(operator^, float, vec_xor)
-DEFINE_BINARY_OP(maximum, float, vec_max)
-DEFINE_BINARY_OP(minimum, float, vec_min)
+
 
 DEFINE_BINARY_OP(operator+, int64_t, vec_add)
 DEFINE_BINARY_OP(operator-, int64_t, vec_sub)
@@ -89,14 +81,7 @@ DEFINE_BINARY_OP(operator^, int64_t, vec_xor)
 DEFINE_BINARY_OP(maximum, int64_t, vec_max)
 DEFINE_BINARY_OP(minimum, int64_t, vec_min)
 
-DEFINE_BINARY_OP(operator+, int32_t, vec_add)
-DEFINE_BINARY_OP(operator-, int32_t, vec_sub)
-DEFINE_BINARY_OP(operator*, int32_t, vec_mul)
-DEFINE_BINARY_OP(operator&, int32_t, vec_and)
-DEFINE_BINARY_OP(operator|, int32_t, vec_or)
-DEFINE_BINARY_OP(operator^, int32_t, vec_xor)
-DEFINE_BINARY_OP(maximum, int32_t, vec_max)
-DEFINE_BINARY_OP(minimum, int32_t, vec_min)
+
 
 DEFINE_BINARY_OP(operator+, int16_t, vec_add)
 DEFINE_BINARY_OP(operator-, int16_t, vec_sub)
@@ -172,14 +157,7 @@ Vec256<double> inline __inline_attrs fmadd(
   return Vec256<double>{vec_madd(a.vec0(), b.vec0(), c.vec0()),
                         vec_madd(a.vec1(), b.vec1(), c.vec1())};
 }
-template <>
-Vec256<float> inline __inline_attrs fmadd(
-    const Vec256<float>& a,
-    const Vec256<float>& b,
-    const Vec256<float>& c) {
-  return Vec256<float>{vec_madd(a.vec0(), b.vec0(), c.vec0()),
-                       vec_madd(a.vec1(), b.vec1(), c.vec1())};
-}
+ 
 template <>
 Vec256<int64_t> inline __inline_attrs fmadd(
     const Vec256<int64_t>& a,

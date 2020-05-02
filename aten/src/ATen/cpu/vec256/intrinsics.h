@@ -24,6 +24,7 @@
         (defined(__VEC__) || defined(__ALTIVEC__))
 /* XLC or GCC-compatible compiler, targeting PowerPC with VMX/VSX */
 #include <altivec.h>
+#include <altivec.h>
 #define offset0   0
 #define offset16  16
 #define offset32 32

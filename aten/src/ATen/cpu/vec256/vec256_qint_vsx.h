@@ -93,7 +93,7 @@ namespace at
                                 vec_vsx_ld(offset16, reinterpret_cast<const __vchari*>(ptr))
                         };
                     }
-                    __at_align32__ value_type tmp_values[size()];
+                    __at_align32__  value_type tmp_values[size()];
                     std::memcpy(tmp_values, ptr, std::min(count, size()) * sizeof(value_type));
 
                     return Vec256<c10::qint8> {
@@ -107,7 +107,7 @@ namespace at
                         vec_vsx_st(_vec1, offset16, reinterpret_cast<value_type*>(ptr));
                     }
                     else if (count > 0) {
-                        __at_align32__ value_type tmp_values[size()];
+                        __at_align32__  value_type tmp_values[size()];
                         vec_vsx_st(_vec0, offset0, tmp_values);
                         vec_vsx_st(_vec1, offset16, tmp_values);
                         std::memcpy(ptr, tmp_values, std::min(count, size()) * sizeof(value_type));
@@ -320,7 +320,7 @@ namespace at
                                 vec_vsx_ld(offset16, reinterpret_cast<const value_type*>(ptr))
                         };
                     }
-                    __at_align32__ value_type tmp_values[size()];
+                    __at_align32__  value_type tmp_values[size()];
                     std::memcpy(tmp_values, ptr, std::min(count, size()) * sizeof(value_type));
 
                     return Vec256<c10::quint8> {
@@ -334,7 +334,7 @@ namespace at
                         vec_vsx_st(_vec1, offset16, reinterpret_cast<value_type*>(ptr));
                     }
                     else if (count > 0) {
-                        __at_align32__ value_type tmp_values[size()];
+                        __at_align32__  value_type tmp_values[size()];
                         vec_vsx_st(_vec0, offset0, tmp_values);
                         vec_vsx_st(_vec1, offset16, tmp_values);
                         std::memcpy(ptr, tmp_values, std::min(count, size()) * sizeof(value_type));
@@ -528,7 +528,7 @@ namespace at
                         };
                     }
 
-                    __at_align32__ value_type tmp_values[size()];
+                    __at_align32__  value_type tmp_values[size()];
                     std::memcpy(tmp_values, ptr, std::min(count, size()) * sizeof(value_type));
 
                     return Vec256<c10::qint32> {
@@ -542,7 +542,7 @@ namespace at
                         vec_vsx_st(_vec1, offset16, reinterpret_cast<value_type*>(ptr));
                     }
                     else if (count > 0) {
-                        __at_align32__ value_type tmp_values[size()];
+                        __at_align32__  value_type tmp_values[size()];
                         vec_vsx_st(_vec0, offset0, tmp_values);
                         vec_vsx_st(_vec1, offset16, tmp_values);
                         std::memcpy(ptr, tmp_values, std::min(count, size()) * sizeof(value_type));
