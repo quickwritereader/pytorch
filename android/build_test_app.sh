@@ -47,7 +47,7 @@ echo "ABIS_LIST:$ABIS_LIST"
 LIB_DIR=$PYTORCH_ANDROID_DIR/pytorch_android/src/main/jniLibs
 INCLUDE_DIR=$PYTORCH_ANDROID_DIR/pytorch_android/src/main/cpp/libtorch_include
 mkdir -p $LIB_DIR
-rm $LIB_DIR/*
+rm -f $LIB_DIR/*
 mkdir -p $INCLUDE_DIR
 
 for abi in $(echo $ABIS_LIST | tr ',' '\n')
@@ -62,7 +62,7 @@ mkdir -p $OUT_DIR
 pushd $PYTORCH_DIR
 python $PYTORCH_DIR/setup.py clean
 
-ANDROID_ABI=$abi BUILD_PYTORCH_MOBILE=1 VERBOSE=1 ANDROID_DEBUG_SYMBOLS=1 $PYTORCH_DIR/scripts/build_android.sh -DANDROID_CCACHE=$(which ccache)
+ANDROID_ABI=$abi VERBOSE=1 ANDROID_DEBUG_SYMBOLS=1 $PYTORCH_DIR/scripts/build_android.sh -DANDROID_CCACHE=$(which ccache)
 
 cp -R $PYTORCH_DIR/build_android/install/lib $OUT_DIR/
 cp -R $PYTORCH_DIR/build_android/install/include $OUT_DIR/
@@ -97,4 +97,3 @@ find $PYTORCH_ANDROID_DIR -type f -name *apk
 find $PYTORCH_ANDROID_DIR -type f -name *apk | xargs echo "To install apk run: $ANDROID_HOME/platform-tools/adb install -r "
 
 popd
-

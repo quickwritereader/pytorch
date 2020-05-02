@@ -103,15 +103,12 @@ class BasePruningMethod(ABC):
             hooks_to_remove = []
             for k, hook in module._forward_pre_hooks.items():
                 # if it exists, take existing thing, remove hook, then
-                # go thru normal thing
+                # go through normal thing
                 if (
                     isinstance(hook, BasePruningMethod)
                     and hook._tensor_name == name
                 ):
                     old_method = hook
-                    # # reset the tensor reparametrization
-                    # module = remove_pruning(module, name)
-                    # del module._forward_pre_hooks[k]
                     hooks_to_remove.append(k)
                     found += 1
             assert (
@@ -169,10 +166,10 @@ class BasePruningMethod(ABC):
             del module._parameters[name]
             default_mask = torch.ones_like(orig)  # temp
         # If this is not the first time pruning is applied, all of the above
-        # has been done before in a previos pruning iteration, so we're good
+        # has been done before in a previous pruning iteration, so we're good
         # to go
         else:
-            default_mask = getattr(module, name + "_mask").detach().clone()
+            default_mask = getattr(module, name + "_mask").detach().clone(memory_format=torch.contiguous_format)
 
         # Use try/except because if anything goes wrong with the mask 
         # computation etc., you'd want to roll back.
@@ -241,7 +238,7 @@ class BasePruningMethod(ABC):
         orig.data = weight.data
         del module._parameters[self._tensor_name + "_orig"]
         del module._buffers[self._tensor_name + "_mask"]
-        module.register_parameter(self._tensor_name, orig)
+        setattr(module, self._tensor_name, orig)
 
 
 class PruningContainer(BasePruningMethod):
@@ -450,7 +447,7 @@ class RandomUnstructured(BasePruningMethod):
         # than the number of units in the tensor
         _validate_pruning_amount(nparams_toprune, tensor_size)
 
-        mask = default_mask.clone()
+        mask = default_mask.clone(memory_format=torch.contiguous_format)
 
         if nparams_toprune != 0:  # k=0 not supported by torch.kthvalue
             prob = torch.rand_like(t)
@@ -508,7 +505,7 @@ class L1Unstructured(BasePruningMethod):
         # than the number of units in the tensor
         _validate_pruning_amount(nparams_toprune, tensor_size)
 
-        mask = default_mask.clone()
+        mask = default_mask.clone(memory_format=torch.contiguous_format)
 
         if nparams_toprune != 0:  # k=0 not supported by torch.kthvalue
             # largest=True --> top k; largest=False --> bottom k
@@ -1116,8 +1113,8 @@ def remove(module, name):
             will act.
 
     Examples:
-        >>> m = random_pruning(nn.Linear(5, 7), name='weight', amount=0.2)
-        >>> m = remove_pruning(m, name='weight')
+        >>> m = random_unstructured(nn.Linear(5, 7), name='weight', amount=0.2)
+        >>> m = remove(m, name='weight')
     """
     for k, hook in module._forward_pre_hooks.items():
         if isinstance(hook, BasePruningMethod) and hook._tensor_name == name:
@@ -1146,7 +1143,7 @@ def is_pruned(module):
         >>> m = nn.Linear(5, 7)
         >>> print(prune.is_pruned(m))
         False
-        >>> prune.random_pruning(m, name='weight', amount=0.2)
+        >>> prune.random_unstructured(m, name='weight', amount=0.2)
         >>> print(prune.is_pruned(m))
         True
     """

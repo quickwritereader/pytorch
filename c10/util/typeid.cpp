@@ -17,23 +17,22 @@ C10_EXPORT void _ThrowRuntimeTypeLogicError(const string& msg) {
   AT_ERROR(msg);
 }
 
-const TypeMetaData _typeMetaDataInstance_uninitialized_ = detail::TypeMetaData(
-    0,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    TypeIdentifier::uninitialized(),
-    "nullptr (uninitialized)");
 
 } // namespace detail
 
-// TODO Inlineable on non-MSVC like other preallocated ids?
 template <>
-C10_EXPORT const detail::TypeMetaData* TypeMeta::_typeMetaDataInstance<
+EXPORT_IF_NOT_GCC const detail::TypeMetaData* TypeMeta::_typeMetaDataInstance<
     detail::_Uninitialized>() noexcept {
-  return &detail::_typeMetaDataInstance_uninitialized_;
+  static constexpr detail::TypeMetaData singleton = detail::TypeMetaData(
+      0,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+      nullptr,
+      TypeIdentifier::uninitialized(),
+      "nullptr (uninitialized)");
+  return &singleton;
 }
 
 CAFFE_KNOWN_TYPE(uint8_t)
@@ -44,9 +43,11 @@ CAFFE_KNOWN_TYPE(int64_t)
 CAFFE_KNOWN_TYPE(at::Half)
 CAFFE_KNOWN_TYPE(float)
 CAFFE_KNOWN_TYPE(double)
-CAFFE_KNOWN_TYPE(at::ComplexHalf)
+CAFFE_KNOWN_TYPE(c10::complex<c10::Half>)
 CAFFE_KNOWN_TYPE(std::complex<float>)
 CAFFE_KNOWN_TYPE(std::complex<double>)
+CAFFE_KNOWN_TYPE(c10::complex<float>)
+CAFFE_KNOWN_TYPE(c10::complex<double>)
 // 11 = undefined type id
 // 12 = Tensor (defined in tensor.cc)
 CAFFE_KNOWN_TYPE(std::string)
@@ -75,7 +76,7 @@ namespace detail {
 template <class T>
 class _guard_long_unique_dummy final {};
 template <class T>
-using _guard_long_unique = c10::guts::conditional_t<
+using _guard_long_unique = std::conditional_t<
     std::is_same<long, int32_t>::value || std::is_same<long, int64_t>::value,
     _guard_long_unique_dummy<T>,
     T>;

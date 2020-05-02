@@ -7,12 +7,15 @@
 
 #include "caffe2/core/common_omp.h"
 #include "caffe2/core/context.h"
+#include "caffe2/core/export_caffe2_op_to_c10.h"
 #include "caffe2/core/logging.h"
 #include "caffe2/core/operator.h"
 #include "caffe2/core/types.h"
 #include "caffe2/operators/gather_op.h"
 #include "caffe2/utils/conversions.h"
 #include "caffe2/utils/math.h"
+
+C10_DECLARE_EXPORT_CAFFE2_OP_TO_C10(GatherRangesOp);
 
 namespace caffe2 {
 
@@ -1180,7 +1183,7 @@ class GatherRangesOp : public Operator<Context> {
     CAFFE_ENFORCE(ranges.dim() == 3, "Ranges must be 3-D");
     CAFFE_ENFORCE(ranges.size(1) > 0, "There has to be at least one range");
     CAFFE_ENFORCE_EQ(
-        ranges.size(2), 2, "Ranges last dimention should be of size 2");
+        ranges.size(2), 2, "Ranges last dimension should be of size 2");
 
     auto* rawData = static_cast<const char*>(data.raw_data());
     auto* rangesData = ranges.template data<Index>();

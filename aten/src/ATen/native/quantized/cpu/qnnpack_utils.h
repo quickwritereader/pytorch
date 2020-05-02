@@ -11,7 +11,7 @@ struct QnnpackOperatorDeleter {
 };
 
 // PackedWeight struct for QNNPACK stores the original Weight and Bias as
-// QNNPACK currently does not support an unpack function. Possible optimiation -
+// QNNPACK currently does not support an unpack function. Possible optimization -
 // For PyTorch Mobile, once the model is scripted and serialized we don't need
 // to call unpack, so we can save some memory by checking for this case.
 // Input scale is set to null in pre-pack step. QNNPACK needs bias quantized with
@@ -83,4 +83,19 @@ inline std::pair<uint8_t, uint8_t> activationLimits(
 #endif
   }
 }
+
+namespace at {
+namespace native {
+namespace qnnp_avgpool_helper {
+Tensor qnnpack_avg_pool2d(
+    Tensor input,
+    IntArrayRef kernel_size,
+    IntArrayRef stride,
+    IntArrayRef padding,
+    bool ceil_mode,
+    bool count_include_pad,
+    c10::optional<int64_t> divisor_override);
+} // qnnp_avgpool_helper
+} // namespace native
+} // namespace at
 #endif
