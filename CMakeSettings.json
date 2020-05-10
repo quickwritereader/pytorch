@@ -1,0 +1,41 @@
+﻿{
+  "configurations": [
+    {
+      "name": "WSL-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeExecutable": "/usr/bin/cmake",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_x64" ],
+      "wslPath": "${defaultWSLPath}",
+      "addressSanitizerRuntimeFlags": "detect_leaks=0",
+      "variables": []
+    },
+    {
+      "name": "Linux-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "cmakeExecutable": "/usr/bin/cmake",
+      "remoteCopySourcesExclusionList": [ ".vs", ".git", "out", "torch/bin", "third_party" ],
+      "cmakeCommandArgs": "-DBUILD_TEST=ON -DUSE_FBGEMM=OFF  -DUSE_MKLDNN=OFF -DUSE_CUDA=OFF -DUSE_FBGEMM=OFF -DUSE_NNPACK=OFF -DUSE_QNNPACK=OFF -DUSE_METAL=OFF -DAT_MKLDNN_ENABLED=OFF -DUSE_DISTRIBUTED=OFF -DONNX_ML=OFF",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_x64" ],
+      "intelliSenseMode": "linux-gcc-x64",
+      "remoteMachineName": "${defaultRemoteMachineName}",
+      "remoteCMakeListsRoot": "$HOME/.vs/pytorch",
+      "remoteBuildRoot": "$HOME/.vs/pytorch/out/build/${name}",
+      "remoteInstallRoot": "$HOME/.vs/pytorch/out/install/${name}",
+      "remoteCopySources": true,
+      "rsyncCommandArgs": " -azP -t --delete  --exclude=aten/src/ATen/Config.h",
+      "remoteCopyBuildOutput": false,
+      "remoteCopySourcesMethod": "rsync",
+      "addressSanitizerRuntimeFlags": "detect_leaks=0",
+      "variables": []
+    }
+  ]
+}

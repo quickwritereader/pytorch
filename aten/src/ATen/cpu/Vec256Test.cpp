@@ -1,3 +1,4 @@
+#if 0
 #include <Vec256Test.h>
 namespace {
 
@@ -818,3 +819,5 @@ namespace {
 #endif
 #endif
 }
+
+#endif

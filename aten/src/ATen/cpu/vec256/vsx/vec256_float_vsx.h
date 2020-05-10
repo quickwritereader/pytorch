@@ -2,16 +2,16 @@
 
 #include <ATen/cpu/vec256/intrinsics.h>
 #include <ATen/cpu/vec256/vec256_base.h>
-#include <ATen/cpu/vec256/vsx_macros.h> 
+#include <ATen/cpu/vec256/vsx/vsx_macrosses.h>
 namespace at {
 	namespace vec256 {
 		// See Note [Acceptable use of anonymous namespace in header]
 
 		namespace {
 
-#if defined(__VSX__)
+			//#Constants
+			const __vchar mask_zero_bits = { 128,128,128,128,128,128,128,128,128,128,128,128 ,96,64,32,0 };
 
-//#Constants
 			static const __vf zero = vec_splats(0.f);
 			static const __vf half = vec_splats(0.5f);
 			static const __vf one = vec_splats(1.f);
@@ -46,7 +46,8 @@ namespace at {
 			static const __vf log_q1 = vec_splats(-2.12194440e-4f);
 			static const __vf log_q2 = vec_splats(0.693359375f);
 			static const __vf max_logf = vec_splats(88.02969187150841f);
-			static const __vf max_numf = vec_splats(1.7014117331926442990585209174225846272e38f);
+			static const __vf max_numf =
+				vec_splats(1.7014117331926442990585209174225846272e38f);
 			static const __vf min_inf = (__vf)vec_splats(0xff800000u);
 			static const __vf min_norm_pos = (__vf)vec_splats(0x0800000u);
 			static const __vf minus_cephes_dp1 = vec_splats(-0.78515625f);
@@ -79,7 +80,6 @@ namespace at {
 			static const __vui vu_29 = vec_splats(29u);
 			static const __vui vu_23 = vec_splats(23u);
 
-
 			template <>
 			class Vec256<float> {
 			private:
@@ -104,6 +104,9 @@ namespace at {
 					return 8;
 				}
 				Vec256() {}
+
+				__inline_attrs Vec256(__vf v) : _vec0{ v }, _vec1{ v }{}
+				__inline_attrs Vec256(__vib vmask) : _vecb0{ vmask }, _vecb1{ vmask } {}
 				__inline_attrs Vec256(__vf v1, __vf v2) : _vec0{ v1 }, _vec1{ v2 } {}
 				__inline_attrs Vec256(__vib v1, __vib v2) : _vecb0{ v1 }, _vecb1{ v2 } {}
 				__inline_attrs Vec256(float scalar)
@@ -127,37 +130,37 @@ namespace at {
 				}
 
 				template <uint64_t mask>
-				static std::endable_if_t<mask == 0, Vec256<float>> __inline_attrs
+				static std::enable_if_t<mask == 0, Vec256<float>> __inline_attrs
 					blend(const Vec256<float>& a, const Vec256<float>& b) {
 					return a;
 				}
 
 				template <uint64_t mask>
-				static std::endable_if_t<(mask & 255) == 255, Vec256<float>>
-					__inline_attrs blend(const Vec256<float>& a, const Vec256<float>& b) {
+				static std::enable_if_t<(mask & 255) == 255, Vec256<float>> __inline_attrs
+					blend(const Vec256<float>& a, const Vec256<float>& b) {
 					return b;
 				}
 
 				template <uint64_t mask>
-				static std::endable_if_t<mask == 15, Vec256<float>> __inline_attrs
+				static std::enable_if_t<mask == 15, Vec256<float>> __inline_attrs
 					blend(const Vec256<float>& a, const Vec256<float>& b) {
-					return Vec256<float>{b._vec0, a._vec1};
+					return { b._vec0, a._vec1 };
 				}
 
 				template <uint64_t mask>
-				static std::endable_if_t<(mask > 0 && mask < 15), Vec256<float>>
-					__inline_attrs blend(const Vec256<float>& a, const Vec256<float>& b) {
+				static std::enable_if_t<(mask > 0 && mask < 15), Vec256<float>> __inline_attrs
+					blend(const Vec256<float>& a, const Vec256<float>& b) {
 					constexpr uint32_t g0 = (mask & 1) * 0xffffffff;
 					constexpr uint32_t g1 = ((mask & 2) >> 1) * 0xffffffff;
 					constexpr uint32_t g2 = ((mask & 4) >> 2) * 0xffffffff;
 					constexpr uint32_t g3 = ((mask & 8) >> 3) * 0xffffffff;
 					const __vib mask_1st = (__vib){ g0, g1, g2, g3 };
-					return Vec256<float>{(__vf)vec_sel(a._vec0, b._vec0, (__vib)mask_1st),
-						a._vec1};
+					return {
+						(__vf)vec_sel(a._vec0, b._vec0, (__vib)mask_1st), a._vec1 };
 				}
 
 				template <uint64_t mask>
-				static std::endable_if_t<
+				static std::enable_if_t<
 					(mask > 15 && (mask & 255) != 255 && ((mask & 15) == 15)),
 					Vec256<float>>
 					__inline_attrs blend(const Vec256<float>& a, const Vec256<float>& b) {
@@ -168,12 +171,12 @@ namespace at {
 					constexpr uint32_t g3_2 = ((mask2 & 8) >> 3) * 0xffffffff;
 					const __vib mask_2nd = (__vib){ g0_2, g1_2, g2_2, g3_2 };
 					// generated masks
-					return Vec256<float>{b._vec0,
-						(__vf)vec_sel(a._vec1, b._vec1, (__vib)mask_2nd)};
+					return {
+						b._vec0, (__vf)vec_sel(a._vec1, b._vec1, (__vib)mask_2nd) };
 				}
 
 				template <uint64_t mask>
-				static std::endable_if_t<
+				static std::enable_if_t<
 					(mask > 15 && ((mask & 255) != 255) && ((mask & 15) == 0)),
 					Vec256<float>>
 					__inline_attrs blend(const Vec256<float>& a, const Vec256<float>& b) {
@@ -184,16 +187,15 @@ namespace at {
 					constexpr uint32_t g3_2 = ((mask2 & 8) >> 3) * 0xffffffff;
 					const __vib mask_2nd = (__vib){ g0_2, g1_2, g2_2, g3_2 };
 					// generated masks
-					return Vec256<float>{a, (__vf)vec_sel(a._vec1, b._vec1, (__vib)mask_2nd)};
+					return { a, (__vf)vec_sel(a._vec1, b._vec1, (__vib)mask_2nd) };
 				}
 
 				template <uint64_t mask>
-				static std::endable_if_t<
+				static std::enable_if_t<
 					(mask > 15 && ((mask & 255) != 255) && ((mask & 15) != 0) &&
 						((mask & 15) != 15)),
 					Vec256<float>>
 					__inline_attrs blend(const Vec256<float>& a, const Vec256<float>& b) {
-
 					constexpr uint32_t g0 = (mask & 1) * 0xffffffff;
 					constexpr uint32_t g1 = ((mask & 2) >> 1) * 0xffffffff;
 					constexpr uint32_t g2 = ((mask & 4) >> 2) * 0xffffffff;
@@ -207,8 +209,9 @@ namespace at {
 					const __vib mask_1st = (__vib){ g0, g1, g2, g3 };
 					const __vib mask_2nd = (__vib){ g0_2, g1_2, g2_2, g3_2 };
 					// generated masks
-					return Vec256<float>{(__vf)vec_sel(a._vec0, b._vec0, (__vib)mask_1st),
-						(__vf)vec_sel(a._vec1, b._vec1, (__vib)mask_2nd)};
+					return {
+						(__vf)vec_sel(a._vec0, b._vec0, (__vib)mask_1st),
+						(__vf)vec_sel(a._vec1, b._vec1, (__vib)mask_2nd) };
 				}
 
 				static Vec256<float> __inline_attrs blendv(
@@ -216,9 +219,10 @@ namespace at {
 					const Vec256<float>& b,
 					const Vec256<float>& mask) {
 					// the mask used here returned by comparision of vec256
-					// assuming this we can use the same mask directly with vec_sel 
-					return Vec256<float>{vec_sel(a._vec0, b._vec0, mask._vecb0),
-						vec_sel(a._vec1, b._vec1, mask._vecb1)};
+					// assuming this we can use the same mask directly with vec_sel
+					return {
+						vec_sel(a._vec0, b._vec0, mask._vecb0),
+						vec_sel(a._vec1, b._vec1, mask._vecb1) };
 				}
 
 				static Vec256<float> arange(float base = 0.f, float step = 1.f) {
@@ -260,17 +264,15 @@ namespace at {
 				static Vec256<value_type> __inline_attrs
 					loadu(const void* ptr, size_t count = size()) {
 					if (count == size()) {
-						return Vec256<float>{
+						return {
 							vec_vsx_ld(offset0, reinterpret_cast<const value_type*>(ptr)),
-								vec_vsx_ld(offset16, reinterpret_cast<const value_type*>(ptr))};
+							vec_vsx_ld(offset16, reinterpret_cast<const value_type*>(ptr)) };
 					}
 
-					__at_align32__  value_type tmp_values[size()];
+					__at_align32__ value_type tmp_values[size()];
 					std::memcpy(tmp_values, ptr, std::min(count, size()) * sizeof(value_type));
 
-					return Vec256<float>{
-						vec_vsx_ld(offset0, tmp_values),
-							vec_vsx_ld(offset16, tmp_values)};
+					return { vec_vsx_ld(offset0, tmp_values), vec_vsx_ld(offset16, tmp_values) };
 				}
 				void __inline_attrs store(void* ptr, size_t count = size()) const {
 					if (count == size()) {
@@ -278,10 +280,11 @@ namespace at {
 						vec_vsx_st(_vec1, offset16, reinterpret_cast<value_type*>(ptr));
 					}
 					else if (count > 0) {
-						__at_align32__  value_type tmp_values[size()];
+						__at_align32__ value_type tmp_values[size()];
 						vec_vsx_st(_vec0, offset0, tmp_values);
 						vec_vsx_st(_vec1, offset16, tmp_values);
-						std::memcpy(ptr, tmp_values, std::min(count, size()) * sizeof(value_type));
+						std::memcpy(
+							ptr, tmp_values, std::min(count, size()) * sizeof(value_type));
 					}
 				}
 
@@ -292,26 +295,35 @@ namespace at {
 					Vec256<float> ret;
 					for (int i = 0; i < 4; i++) {
 						ret._vec0[i] = f(_vec0[i]);
-					}
-					for (int i = 0; i < 4; i++) {
 						ret._vec1[i] = f(_vec1[i]);
 					}
 					return ret;
 				}
 
-				Vec256<float> mapbi(float (*f)(float, float), const Vec256<float>& other) const {
+				Vec256<float> mapbi(float (*f)(float, float), const Vec256<float>& other)
+					const {
 					Vec256<float> ret;
-					for (int i = 0; i < 4; i++) {
-						ret._vec0[i] = f(_vec0[i],other._vec0[i]);
-					}
-					for (int i = 0; i < 4; i++) {
-						ret._vec1[i] = f(_vec1[i],other._vec1[i]);
+					for (size_t i = 0; i < size()/2; i++) {
+						ret._vec0[i] = f(_vec0[i], other._vec0[i]);
+						ret._vec1[i] = f(_vec1[i], other._vec1[i]);
 					}
 					return ret;
 				}
 
+				int zero_mask() const {
+					// returns an integer mask where all zero elements are translated to 1-bit
+					// and others are translated to 0-bit
+					//__m256 cmp = _mm256_cmp_ps(values, _mm256_set1_ps(0.0f), _CMP_EQ_OQ);
+					auto cmp = (*this == zero);
+					//return _mm256_movemask_ps(cmp);
+					 //possible simulation  //mask= lvsl ( 0 ) vbpermq( vec, mask <<5) 
+					__vulli result0 = vec_vbpermq((__vchar)cmp._vecb0, mask_zero_bits);
+					__vulli result1 = vec_vbpermq((__vchar)cmp._vecb1, mask_zero_bits);
+					return (result0[1] >> 12 | (result1[1] >> 8));
+				}
+
 				Vec256<float> __inline_attrs abs() const {
-					return Vec256<float>{vec_abs(_vec0), vec_abs(_vec1)};
+					return { vec_abs(_vec0), vec_abs(_vec1) };
 				}
 
 				Vec256<float> __inline_attrs acos() const {
@@ -356,29 +368,28 @@ namespace at {
 
 				Vec256<float> __inline_attrs exp() const {
 					// implementation logic from avx_mathfun with some modifications from sleef
-			 
-					/* Express e**x = e**g 2**n
-					  *   = e**g e**( n loge(2) )
-					  *   = e**( g + n loge(2) )
-					  */
+					 //Express e**x = e**g 2**n
+					 ///   = e**g e**( n loge(2) )
+					 ///   = e**( g + n loge(2) )
+					 //
 					auto tmp_x = *this;
 					auto fx = (tmp_x * log2e_inv).round();
 
-					auto x = fmadd(fx, negln2f_hi, tmp_x);
-					x = fmadd(fx, negln2f_lo, x);
+					auto x = fx.madd(negln2f_hi, tmp_x);
+					x = fx.madd(negln2f_lo, x);
 					auto z = x * x;
-					auto y = fmadd(exp_p0, x, exp_p1);
-					y = fmadd(y, x, exp_p2);
-					y = fmadd(y, x, exp_p3);
-					y = fmadd(y, x, exp_p4);
-					y = fmadd(y, x, exp_p5);
-					y = fmadd(y, z, x) + one;
+					auto y = x.madd(exp_p0, exp_p1);
+					y = y.madd(x, exp_p2);
+					y = y.madd(x, exp_p3);
+					y = y.madd(x, exp_p4);
+					y = y.madd(x, exp_p5);
+					y = y.madd(z, x) + one;
 
-					/* vm_pow2n 2^n */
+					// vm_pow2n 2^n  
 					__vi imm0 = vec_signed(fx._vec0);
 					__vi imm1 = vec_signed(fx._vec1);
-					//this pow2n logic is  from Sleef code
-					__vi imm00 = imm0 >> 1; //>>1 
+					// this pow2n logic is  from Sleef code
+					__vi imm00 = imm0 >> 1; //>>1
 					__vi imm01 = imm1 >> 1;
 					__vi imm10 = imm0 - imm00;
 					__vi imm11 = imm1 - imm01;
@@ -390,24 +401,24 @@ namespace at {
 
 					y._vec0 = (y._vec0 * (__vf)imm00) * (__vf)imm10;
 					y._vec1 = (y._vec1 * (__vf)imm01) * (__vf)imm11;
-					//boundary check
-					auto tmp = select(y, v_inf, exp_hi <= tmp_x);
-					y = select(tmp, zero, tmp_x < exp_lo);
+					// boundary check
+					auto tmp = blendv(y, v_inf, (Vec256<float>(exp_hi) <= tmp_x));
+					y = blendv(tmp, zero, (tmp_x < Vec256<float>(exp_lo)));
 
 					return y;
 				}
 				Vec256<float> expm1() const {
-					return exp() - one; 
+					return exp() - one;
 				}
 
 				Vec256<float> __inline_attrs log() const {
 					auto temp = *this;
 					auto invalid_mask = temp < zero;
-					auto x = maximum(temp, min_norm_pos); /* cut off denormalized stuff */
+					auto x = temp.maximum(min_norm_pos); // cut off denormalized stuff 
 
 					__vi imm0 = vec_sr(__vi(x._vec0), vu_23);
 					__vi imm1 = vec_sr(__vi(x._vec1), vu_23);
-					/* keep only the fractional part */
+					//keep only the fractional part 
 					x = x & inv_mant_mask;
 					x = x | half;
 
@@ -420,48 +431,48 @@ namespace at {
 					auto mask = x < cephes_SQRTHF;
 					auto t = x & mask;
 					x = x - one;
-					ex = ex - (one & mask);
+					ex = ex - (mask & one);
 					x = x + t;
 					auto z = x * x;
-					auto y = fmadd(x, log_p0, log_p1);
-					y = fmadd(y, x, log_p2);
-					y = fmadd(y, x, log_p3);
-					y = fmadd(y, x, log_p4);
-					y = fmadd(y, x, log_p5);
-					y = fmadd(y, x, log_p6);
-					y = fmadd(y, x, log_p7);
-					y = fmadd(y, x, log_p8);
+					auto y = x.madd(log_p0, log_p1);
+					y = y.madd(x, log_p2);
+					y = y.madd(x, log_p3);
+					y = y.madd(x, log_p4);
+					y = y.madd(x, log_p5);
+					y = y.madd(x, log_p6);
+					y = y.madd(x, log_p7);
+					y = y.madd(x, log_p8);
 					y = y * x * z;
-					y = fmadd(ex, log_q1, y);
+					y = ex.madd(log_q1, y);
 					y = y - z * half;
 					x = x + y;
-					x = fmadd(ex, log_q2, x);
-					x = select(x, v_nan, invalid_mask); // negative arg will be NAN
-					 //zero is -inf  
-					x = select(x, min_inf, temp == zero);
+					x = ex.madd(log_q2, x);
+					x = blendv(x, v_nan, invalid_mask); // negative arg will be NAN
+														// zero is -inf
+					x = blendv(x, min_inf, (temp == zero));
 					return x;
 				}
 				Vec256<float> __inline_attrs log10() const {
 					return log() * log10e_inv;
 				}
 				Vec256<float> __inline_attrs log1p() const {
-					return ((*this)+one).log();
+					return ((*this) + one).log();
 				}
 				Vec256<float> __inline_attrs log2() const {
 					return log() * log2e_inv;
 				}
 				Vec256<float> __inline_attrs ceil() const {
-					return Vec256<float>{vec_ceil(_vec0), vec_ceil(_vec1)};
+					return { vec_ceil(_vec0), vec_ceil(_vec1) };
 				}
 				Vec256<float> __inline_attrs cos() const {
-					/* take the absolute value */
+					// take the absolute value 
 					auto x = abs();
-					/* extract the sign bit (upper one) */
+					// extract the sign bit (upper one) 
 					auto sign_bit = (*this) & sign_mask;
-					/* scale by 4/Pi */
+					// scale by 4/Pi 
 					auto y = x * _4div_pi;
-					/* store the integer part of y in mm0 */
-					/* j=(j+1) & (~1) (see the cephes sources) */
+					// store the integer part of y in mm0 
+					// j=(j+1) & (~1) (see the cephes sources) 
 					__vi imm0 = (vec_signed(y._vec0) + vi_1) & vi_inv1;
 					__vi imm1 = (vec_signed(y._vec1) + vi_1) & vi_inv1;
 					y._vec0 = vec_float(imm0);
@@ -469,180 +480,173 @@ namespace at {
 
 					imm0 = imm0 - vi_2;
 					imm1 = imm1 - vi_2;
-					Vec256<float>  poly_mask;
-					/* get the swap sign flag */
+					Vec256<float> poly_mask;
+					// get the swap sign flag 
 					__vi tmp0 = vec_and(vec_nand(imm0, imm0), vi_4);
 					__vi tmp1 = vec_and(vec_nand(imm1, imm1), vi_4);
 					sign_bit._vecb0 = (__vib)vec_sl(tmp0, vu_29);
 					sign_bit._vecb1 = (__vib)vec_sl(tmp1, vu_29);
-					/* get the polynom selection mask
-					   there is one polynom for 0 <= x <= Pi/4
-					   and another one for Pi/4<x<=Pi/2
-					   Both branches will be computed.
-					*/
+					// get the polynom selection mask
+					//there is one polynom for 0 <= x <= Pi / 4
+					//	and another one for Pi / 4 < x <= Pi / 2
+					//	Both branches will be computed.
+
 					poly_mask._vecb0 = (__vib)vec_cmpeq((imm0 & vi_2), vi_0);
 					poly_mask._vecb1 = (__vib)vec_cmpeq((imm1 & vi_2), vi_0);
 
-					/* The magic pass: "Extended precision modular arithmetic"
-					   x = ((x - y * DP1) - y * DP2) - y * DP3; */
-					x = fmadd(y, minus_cephes_dp1, x);
-					x = fmadd(y, minus_cephes_dp2, x);
-					x = fmadd(y, minus_cephes_dp3, x);
+					// The magic pass: "Extended precision modular arithmetic"
+					//  x = ((x - y * DP1) - y * DP2) - y * DP3; 
+					x = y.madd(minus_cephes_dp1, x);
+					x = y.madd(minus_cephes_dp2, x);
+					x = y.madd(minus_cephes_dp3, x);
 
-					/* Evaluate the first polynom  (0 <= x <= Pi/4) */
+					// Evaluate the first polynom  (0 <= x <= Pi/4) 
 					auto z = x * x;
-					y = fmadd(coscof_p0, z, coscof_p1);
-					y = fmadd(y, z, coscof_p2);
+					y = z.madd(coscof_p0, coscof_p1);
+					y = y.madd(z, coscof_p2);
 					y = y * z * z;
 					y = y - z * half + one;
 
-					/* Evaluate the second polynom  (Pi/4 <= x <= 0) */
-					auto y_2 = fmadd(sincof_p0, z, sincof_p1);
-					y_2 = fmadd(y_2, z, sincof_p2);
+					// Evaluate the second polynom  (Pi/4 <= x <= 0) 
+					auto y_2 = z.madd(sincof_p0, sincof_p1);
+					y_2 = y_2.madd(z, sincof_p2);
 					y_2 = y_2 * z;
-					y_2 = fmadd(y_2, x, x);
+					y_2 = y_2.madd(x, x);
 
-					/* select the correct result from the two polynoms */
-					y = select(y, y_2, poly_mask);
-					/* update the sign */
+					// select the correct result from the two polynoms 
+					y = blendv(y, y_2, poly_mask);
+					// update the sign 
 					y = y ^ sign_bit;
 
 					return y;
 				}
 				Vec256<float> __inline_attrs cosh() const {
 					// cosh = 1/2 * (e^x + e^-x) 
-					__vf recp_vec0, recp_vec1, v0, v1;
 					auto e_x = abs().exp();
-					return (e_x + one / e_x) * half; 
+					return (e_x + Vec256<float>(one) / e_x) * half;
 				}
 				Vec256<float> __inline_attrs floor() const {
-					return Vec256<float>{vec_floor(_vec0), vec_floor(_vec1)};
+					return { vec_floor(_vec0), vec_floor(_vec1) };
 				}
 				Vec256<float> __inline_attrs neg() const {
-					return Vec256<float>{vec_neg(_vec0), vec_neg(_vec1)};
+					return { vec_neg(_vec0), vec_neg(_vec1) };
 				}
 				Vec256<float> __inline_attrs round() const {
-					return Vec256<float>{vec_round(_vec0), vec_round(_vec1)};
+					return { vec_round(_vec0), vec_round(_vec1) };
 				}
 				Vec256<float> __inline_attrs sin() const {
-					/* take the absolute value and xtract sign*/
+					// take the absolute value and xtract sign
 					auto x = abs();
 					auto sign_bit = (*this) & sign_mask;
 
-					/* scale by 4/Pi */
+					// scale by 4/Pi 
 					auto y = x * _4div_pi;
-					/* store the integer part of y in mm0 */
+					// store the integer part of y in mm0 
 
-					/* j=(j+1) & (~1) (see the cephes sources) */ 
+					// j=(j+1) & (~1) (see the cephes sources) 
 					__vi imm0 = (vec_signed(y._vec0) + vi_1) & vi_inv1;
-					__vi imm1 = (vec_signed(y._vec1) + vi_1) & vi_inv1; 
+					__vi imm1 = (vec_signed(y._vec1) + vi_1) & vi_inv1;
 					y._vec0 = vec_float(imm0);
 					y._vec1 = vec_float(imm1);
-					/* get the swap sign flag */
+					// get the swap sign flag 
 					Vec256<float> swap_sign_bit, poly_mask;
 					swap_sign_bit._vecb0 = (__vib)vec_sl(imm0 & vi_4, vu_29);
 					swap_sign_bit._vecb1 = (__vib)vec_sl(imm1 & vi_4, vu_29);
-					/* get the polynom selection mask
-					   there is one polynom for 0 <= x <= Pi/4
-					   and another one for Pi/4<x<=Pi/2
+					// get the polynom selection mask
+					//there is one polynom for 0 <= x <= Pi/4
+					//and another one for Pi/4<x<=Pi/2
+					//Both branches will be computed.
 
-					   Both branches will be computed.
-					*/
-					poly_mask._vecb0 = vec_cmpeq((imm0 & vi_2), vi_0); 
+					poly_mask._vecb0 = vec_cmpeq((imm0 & vi_2), vi_0);
 					poly_mask._vecb1 = vec_cmpeq((imm1 & vi_2), vi_0);
-					sign_bit = sign_bit ^ swap_sign_bit; //xor operation 
+					sign_bit = sign_bit ^ swap_sign_bit; // xor operation
 
-					/* The magic pass: "Extended precision modular arithmetic"
-					   x = ((x - y * DP1) - y * DP2) - y * DP3; */
-					x = fmadd(y, minus_cephes_dp1, x); 
-					x = fmadd(y, minus_cephes_dp2, x);
-					x = fmadd(y, minus_cephes_dp3, x);
+					// The magic pass: "Extended precision modular arithmetic"
+					//  x = ((x - y * DP1) - y * DP2) - y * DP3; 
+					x = y.madd(minus_cephes_dp1, x);
+					x = y.madd(minus_cephes_dp2, x);
+					x = y.madd(minus_cephes_dp3, x);
 
-					/* Evaluate the first polynom  (0 <= x <= Pi/4) */
-					auto z = x * x; 
-					y = fmadd(coscof_p0, z, coscof_p1); 
-					y = fmadd(y, z, coscof_p2); 
+					// Evaluate the first polynom  (0 <= x <= Pi/4) 
+					auto z = x * x;
+					y = z.madd(coscof_p0, coscof_p1);
+					y = y.madd(z, coscof_p2);
 					y = y * z * z;
 					y = y - z * half + one;
 
-					/* Evaluate the second polynom  (Pi/4 <= x <= 0) */
-					auto y2 = fmadd(sincof_p0, z, sincof_p1);
-					y2 = fmadd(y2, z, sincof_p2);
-					y2 =  y2 * z;
-					y2 = fmadd(y2, x, x);;
-
-					/* select the correct result from the two polynoms */
-					y = select(y, y2, poly_mask);
+					// Evaluate the second polynom  (Pi/4 <= x <= 0) 
+					auto y2 = z.madd(sincof_p0, sincof_p1);
+					y2 = y2.madd(z, sincof_p2);
+					y2 = y2 * z;
+					y2 = y2.madd(x, x);
+					// select the correct result from the two polynoms 
+					y = blendv(y, y2, poly_mask);
 					y = y ^ sign_bit;
 
 					return y;
 				}
 				Vec256<float> __inline_attrs sinh() const {
-
 					auto temp_abs = abs();
-					//get exponent
+					// get exponent
 					auto ret = temp_abs.exp();
-					auto recp = half / ret;
-					auto v = half * ret - recp;
-					/* extract the sign bit (upper one) */
+					auto recp = Vec256<float>(half) / ret;
+					auto v = ret * half - recp;
+					// extract the sign bit (upper one) 
 					auto sign_bit = (*this) & sign_mask;
 					v = v | sign_bit;
 					auto z = temp_abs * temp_abs;
-					auto y = p0 * z + p1;
-					y = y * z + p2;
-					y = y * z * temp_abs + temp_abs;
-					//check and select 
-					return select(y, v, temp_abs > one);
+					auto y = z.madd( p0, p1);
+					y = y.madd(z, p2);
+					y = (y * z).madd(temp_abs, temp_abs);
+					// check and select
+					return blendv(y, v, temp_abs > one);
 				}
 				Vec256<float> __inline_attrs tan() const {
 					return map(std::tan);
 				}
 				Vec256<float> __inline_attrs tanh() const {
-
 					auto x = *this;
 					auto vabs = abs();
-					//get exponent
+					// get exponent
 					auto exp2x = (vabs + vabs).exp();
-					auto vv = one - two / (exp2x + one);
-					/* extract the sign bit (upper one) */
+					auto vv = Vec256<float>(one) - Vec256<float>(two) / (exp2x + one);
+					// extract the sign bit (upper one) 
 					auto sign_bit = (*this) & sign_mask;
 					auto z = vabs * vabs;
-					auto y   = fmadd(tanh_p0, z, tanh_p1);
-					auto tmp = fmadd(y, z, tanh_p2);
-					y   = fmadd(tmp, z, tanh_p3);
-					tmp = fmadd(y, z, tanh_p4);
+					auto y = z.madd(tanh_p0, tanh_p1);
+					auto tmp = y.madd(z, tanh_p2);
+					y = z.madd(tmp, tanh_p3);
+					tmp = y.madd(z, tanh_p4);
 					y = tmp * z;
-					tmp = fmadd(y, x, x);
-					//add sign
+					tmp = y.madd(x, x);
+					// add sign
 					vv = vv | sign_bit;
-					//check and select
+					// check and select
 					auto sel_mask = vabs >= tanh_0p625;
 					auto max_mask = vabs > tanh_half_max;
 					auto max_ret = sign_bit ^ one;
-					return select(select(tmp, vv, sel_mask), max_ret, max_mask);
+					return blendv(blendv(tmp, vv, sel_mask), max_ret, max_mask);
 				}
 				Vec256<float> __inline_attrs trunc() const {
-					return Vec256<float>{vec_trunc(_vec0), vec_trunc(_vec1)};
+					return { vec_trunc(_vec0), vec_trunc(_vec1) };
 				}
 
 				Vec256<float> __inline_attrs frac() const {
-					return Vec256<float>{
-						vec_sub(_vec0, vec_trunc(_vec0)),
-							vec_sub(_vec1, vec_trunc(_vec1))};
+					return *this - trunc();
 				}
 
 				Vec256<float> __inline_attrs sqrt() const {
-					return Vec256<float>{vec_sqrt(_vec0), vec_sqrt(_vec1)};
+					return { vec_sqrt(_vec0), vec_sqrt(_vec1) };
 				}
 				Vec256<float> __inline_attrs reciprocal() const {
-					return one / (*this);
+					return Vec256<float>(one) / (*this);
 				}
 				Vec256<float> __inline_attrs rsqrt() const {
-					return one / sqrt();
+					return  sqrt().reciprocal();
 				}
 
-				Vec256<float> __inline_attrs pow(const Vec256<float>& pow_exp) const {
 
+				Vec256<float> __inline_attrs pow(const Vec256<float>& pow_exp) const {
 					auto x = *this;
 					auto sign_bit = (*this) & sign_mask;
 					// |b|
@@ -651,49 +655,58 @@ namespace at {
 					Vec256<float> odd_mask;
 					odd_mask._vecb0 = (vec_signed(pow_exp._vec0) & vi_1) != vi_0;
 					odd_mask._vecb1 = (vec_signed(pow_exp._vec1) & vi_1) != vi_0;
-					/* using ln fuction */
+					// using ln fuction 
 					auto temp = (abs().log() * pow_exp).exp();
 
-					// is odd or even check from Sleef
-
+					// is odd or even check from Sleef 
 					auto is_int = (pow_exp == pow_exp_trunc) | (pow_exp_abs >= vcheck);
-					auto is_odd = odd_mask &  is_int & (pow_exp_abs < vcheck);
-					// if even then then pow result should be absolute 
+					auto is_odd = odd_mask & is_int & (pow_exp_abs < vcheck);
+					// if even then then pow result should be absolute
 					auto temp_sign = temp | sign_bit; // copy_sign
-					auto out = select(temp, temp_sign, is_odd);
-					/* x<0 and y != N, then NAN */
-					auto tmp_m = (pow_exp.floor() != pow_exp) & (x < zero);
-					auto out1 = select(out, v_nan, tmp_m);
-					/* y = 0 then 1 */
-					tmp_m = pow_exp_abs == zero;
-					return select(out1, one, tmp_m);
+					auto out = blendv(temp, temp_sign, is_odd);
+					// x<0 and y != N, then NAN 
+					auto out1 = blendv(out, v_nan, ((pow_exp.floor() != pow_exp) & (x < zero)));
+					// y = 0 then 1 
+					return  blendv(out1, one, (pow_exp_abs == zero));
 				}
 
- 
+				Vec256<float> fmod(const Vec256<float>& q) const {
+                    return mapbi(std::fmod, q);
+                }
 
-				    DEFINE_CMP_OP(operator ==, float, vec_cmpeq)
-					DEFINE_CMP_OP(operator !=, float, vec_cmpne)
-					DEFINE_CMP_OP(operator <, float, vec_cmplt)
-					DEFINE_CMP_OP(operator <=, float, vec_cmple)
-					DEFINE_CMP_OP(operator >, float, vec_cmpgt)
-					DEFINE_CMP_OP(operator >=, float, vec_cmpge)
-					DEFINE_FRIEND_BINARY_OP(operator +, float, vec_add)
-					DEFINE_FRIEND_BINARY_OP(operator -, float, vec_sub)
-					DEFINE_FRIEND_BINARY_OP(operator *, float, vec_mul)
-					DEFINE_FRIEND_BINARY_OP(operator /, float, vec_div)
-					DEFINE_FRIEND_BINARY_OP(maximum, float, vec_max)
-					DEFINE_FRIEND_BINARY_OP(minimum, float, vec_min)
-					DEFINE_FRIEND_BITWISE_OP(operator &, float, vec_and)
-					DEFINE_FRIEND_BITWISE_OP(operator |, float, vec_or)
-					DEFINE_FRIEND_BITWISE_OP(operator ^, float, vec_xor)
-					DEFINE_FRIEND_TERNARY_OP(fmadd, float, vec_madd)
-					DEFINE_FRIEND_TERNARY_OP_MASK(select, float, vec_sel)
-
-
-
+			    DEFINE_MEMBER_OP(operator==, float, vec_cmpeq)
+				DEFINE_MEMBER_OP(operator!=, float, vec_cmpne)
+				DEFINE_MEMBER_OP(operator<, float, vec_cmplt)
+				DEFINE_MEMBER_OP(operator<=, float, vec_cmple)
+				DEFINE_MEMBER_OP(operator>, float, vec_cmpgt)
+				DEFINE_MEMBER_OP(operator>=, float, vec_cmpge)
+                DEFINE_MEMBER_OP_AND_ONE(eq, float, vec_cmpeq)
+                DEFINE_MEMBER_OP_AND_ONE(ne, float, vec_cmpne)
+                DEFINE_MEMBER_OP_AND_ONE(lt, float, vec_cmplt)
+                DEFINE_MEMBER_OP_AND_ONE(le, float, vec_cmple)
+                DEFINE_MEMBER_OP_AND_ONE(gt, float, vec_cmpgt)
+                DEFINE_MEMBER_OP_AND_ONE(ge, float, vec_cmpge)
+				DEFINE_MEMBER_OP(operator+, float, vec_add)
+				DEFINE_MEMBER_OP(operator-, float, vec_sub)
+				DEFINE_MEMBER_OP(operator*, float, vec_mul)
+				DEFINE_MEMBER_OP(operator/, float, vec_div)
+				DEFINE_MEMBER_OP(maximum, float, vec_max)
+				DEFINE_MEMBER_OP(minimum, float, vec_min)
+				DEFINE_MEMBER_OP(operator&, float, vec_and)
+				DEFINE_MEMBER_OP(operator|, float, vec_or)
+				DEFINE_MEMBER_OP(operator^, float, vec_xor)
+				DEFINE_MEMBER_TERNARY_OP(madd, float, vec_madd)
 			};
 
-#endif
+			template <>
+			Vec256<float> inline maximum(const Vec256<float>& a, const Vec256<float>& b) {
+				return a.maximum(b);
+			}
+
+			template <>
+			Vec256<float> inline minimum(const Vec256<float>& a, const Vec256<float>& b) {
+				return a.minimum(b);
+			}
 
 		} // namespace
 	} // namespace vec256

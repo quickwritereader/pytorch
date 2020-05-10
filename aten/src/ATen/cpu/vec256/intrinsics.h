@@ -41,6 +41,7 @@ using __vchari = __vector signed char;
 using __vcharb = __vector bool char;
 using __vllb = __vector bool long long;
 using  __vlli = __vector signed long long;
+using  __vulli = __vector unsigned long long;
 using __vib = __vector bool int;
 using __vui = __vector unsigned  int;
 using __vi = __vector signed int;
