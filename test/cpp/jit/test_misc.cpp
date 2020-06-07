@@ -17,6 +17,7 @@
 #include "torch/csrc/jit/ir/attributes.h"
 #include "torch/csrc/jit/ir/irparser.h"
 #include "torch/csrc/jit/ir/scope.h"
+#include "torch/csrc/jit/jit_log.h"
 #include "torch/csrc/jit/passes/bailout_graph.h"
 #include "torch/csrc/jit/passes/common_subexpression_elimination.h"
 #include "torch/csrc/jit/passes/constant_propagation.h"
@@ -755,8 +756,6 @@ void checkTracedInputs(const TracedTestInputs& inputs) {
   TORCH_CHECK(found_mul);
 }
 
-using namespace torch::autograd;
-
 void checkScopeCallbacks() {
   bool found_function_scope = false;
   bool found_method_scope = false;
@@ -1080,6 +1079,25 @@ void testRecordFunction() {
     removeCallback(handle);
   });
   t.join();
+  clearCallbacks();
+
+  // test set ids
+  bool has_ids = false;
+  addGlobalCallback(
+      RecordFunctionCallback(
+          [&has_ids](const RecordFunction& fn) { has_ids = fn.handle() > 0; },
+          [](const RecordFunction&) {})
+          .needsIds(true));
+  { RECORD_USER_SCOPE("test"); }
+  TORCH_CHECK(has_ids);
+  clearCallbacks();
+  has_ids = false;
+  addGlobalCallback(RecordFunctionCallback(
+      [&has_ids](const RecordFunction& fn) { has_ids = fn.handle() > 0; },
+      [](const RecordFunction&) {}));
+  { RECORD_USER_SCOPE("test"); }
+  TORCH_CHECK(!has_ids);
+  clearCallbacks();
 }
 
 class TestThreadLocalDebugInfo : public c10::DebugInfoBase {
@@ -1441,15 +1459,15 @@ void testProfiler() {
   auto begin = pr->profiled_graph_->block()->nodes().begin();
   auto end = pr->profiled_graph_->block()->nodes().end();
   auto mm =
-      std::find_if(begin, end, [](Node* n) { return n->kind() == aten::mm; });
+      std::find_if(begin, end, [](Node* n) { return n->kind() == aten::add; });
   ASSERT_NE(mm, end);
-  std::vector<int64_t> mm_expected{4, 256};
+  std::vector<int64_t> mm_expected{4, 2048};
   std::vector<int64_t> eltwise{4, 512};
   checkShape(*mm, mm_expected);
-  auto sigmoid_n = std::find_if(
-      begin, end, [](Node* n) { return n->kind() == aten::sigmoid; });
-  ASSERT_NE(sigmoid_n, end);
-  checkShape(*sigmoid_n, eltwise);
+  auto mul_n =
+      std::find_if(begin, end, [](Node* n) { return n->kind() == aten::mul; });
+  ASSERT_NE(mul_n, end);
+  checkShape(*mul_n, eltwise);
   auto tanh_n =
       std::find_if(begin, end, [](Node* n) { return n->kind() == aten::tanh; });
   checkShape(*tanh_n, eltwise);
@@ -1591,6 +1609,32 @@ void testAutogradSymbols() {
   sym = Symbol::fromQualString("custom::test_symbol");
   node = graph.create(sym);
   TORCH_CHECK(!canRunWithAutograd(node));
+}
+
+void testDefaultArgTypeHinting() {
+  const auto text_non_hinted = R"(
+
+def a(x, y=1):
+    print("a1")
+    print("a2")
+    return x
+  )";
+
+  const auto text_hinted = R"(
+
+def a(x, y:int=1):
+    print("a1")
+    print("a2")
+    return x
+  )";
+
+  try {
+    compile(text_non_hinted);
+    ASSERT_TRUE(0);
+  } catch (const std::exception& c) {
+  }
+
+  auto cu = compile(text_hinted);
 }
 
 } // namespace jit
