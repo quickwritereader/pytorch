@@ -11,6 +11,10 @@
 #include <ATen/cpu/vec256/vsx/vec256_qint32_vsx.h>
 #include <ATen/cpu/vec256/vsx/vec256_qint8_vsx.h>
 #include <ATen/cpu/vec256/vsx/vec256_quint8_vsx.h>
+#include <ATen/cpu/vec256/vsx/vec256_std_complex_float_vsx.h>
+#include <ATen/cpu/vec256/vsx/vec256_std_complex_double_vsx.h>
+#include <ATen/cpu/vec256/vsx/vec256_complex_float_vsx.h>
+#include <ATen/cpu/vec256/vsx/vec256_complex_double_vsx.h>
 namespace at {
 namespace vec256 {
 
