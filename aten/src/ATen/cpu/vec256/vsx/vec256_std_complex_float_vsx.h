@@ -9,10 +9,10 @@ namespace at {
 namespace vec256 {
 // See Note [Acceptable use of anonymous namespace in header]
 namespace {
-using ComplexFlt = std::complex<float>;
+using StdComplexFlt = std::complex<float>;
 
 template <>
-class Vec256<ComplexFlt> {
+class Vec256<StdComplexFlt> {
  private:
   union {
     struct {
@@ -27,7 +27,7 @@ class Vec256<ComplexFlt> {
   } __attribute__((__may_alias__));
 
  public:
-  using value_type = ComplexFlt;
+  using value_type = StdComplexFlt;
   using vec_internal_type = __vf;
   using vec_internal_mask_type = __vib;
 
@@ -39,84 +39,84 @@ class Vec256<ComplexFlt> {
   __inline_attrs Vec256(__vf v1, __vf v2) : _vec0{v1}, _vec1{v2} {}
   __inline_attrs Vec256(__vib v1, __vib v2) : _vecb0{v1}, _vecb1{v2} {}
 
-  Vec256(ComplexFlt val) {
+  Vec256(StdComplexFlt val) {
     float real_value = val.real();
     float imag_value = val.imag();
     _vec0 = __vf{real_value, imag_value, real_value, imag_value};
     _vec1 = __vf{real_value, imag_value, real_value, imag_value};
   }
 
-  Vec256(ComplexFlt val1, ComplexFlt val2, ComplexFlt val3, ComplexFlt val4) {
+  Vec256(StdComplexFlt val1, StdComplexFlt val2, StdComplexFlt val3, StdComplexFlt val4) {
     _vec0 = __vf{val1.real(), val1.imag(), val2.real(), val2.imag()};
     _vec1 = __vf{val3.real(), val3.imag(), val4.real(), val4.imag()};
   }
 
   template <uint64_t mask>
-  static std::enable_if_t<blendChoiceComplex(mask) == 0, Vec256<ComplexFlt>>
-      __inline_attrs blend(const Vec256<ComplexFlt>& a,
-                           const Vec256<ComplexFlt>& b) {
+  static std::enable_if_t<blendChoiceComplex(mask) == 0, Vec256<StdComplexFlt>>
+      __inline_attrs blend(const Vec256<StdComplexFlt>& a,
+                           const Vec256<StdComplexFlt>& b) {
     return a;
   }
 
   template <uint64_t mask>
-  static std::enable_if_t<blendChoiceComplex(mask) == 1, Vec256<ComplexFlt>>
-      __inline_attrs blend(const Vec256<ComplexFlt>& a,
-                           const Vec256<ComplexFlt>& b) {
+  static std::enable_if_t<blendChoiceComplex(mask) == 1, Vec256<StdComplexFlt>>
+      __inline_attrs blend(const Vec256<StdComplexFlt>& a,
+                           const Vec256<StdComplexFlt>& b) {
     return b;
   }
 
   template <uint64_t mask>
-  static std::enable_if_t<blendChoiceComplex(mask) == 2, Vec256<ComplexFlt>>
-      __inline_attrs blend(const Vec256<ComplexFlt>& a,
-                           const Vec256<ComplexFlt>& b) {
+  static std::enable_if_t<blendChoiceComplex(mask) == 2, Vec256<StdComplexFlt>>
+      __inline_attrs blend(const Vec256<StdComplexFlt>& a,
+                           const Vec256<StdComplexFlt>& b) {
     return {b._vec0, a._vec1};
   }
 
   template <uint64_t mask>
-  static std::enable_if_t<blendChoiceComplex(mask) == 3, Vec256<ComplexFlt>>
-      __inline_attrs blend(const Vec256<ComplexFlt>& a,
-                           const Vec256<ComplexFlt>& b) {
+  static std::enable_if_t<blendChoiceComplex(mask) == 3, Vec256<StdComplexFlt>>
+      __inline_attrs blend(const Vec256<StdComplexFlt>& a,
+                           const Vec256<StdComplexFlt>& b) {
     return {a._vec0, b._vec1};
   }
 
   template <uint64_t mask>
-  static std::enable_if_t<blendChoiceComplex(mask) == 4, Vec256<ComplexFlt>>
-      __inline_attrs blend(const Vec256<ComplexFlt>& a,
-                           const Vec256<ComplexFlt>& b) {
+  static std::enable_if_t<blendChoiceComplex(mask) == 4, Vec256<StdComplexFlt>>
+      __inline_attrs blend(const Vec256<StdComplexFlt>& a,
+                           const Vec256<StdComplexFlt>& b) {
     const __vib mask_1st = VsxComplexMask1(mask);
     return {(__vf)vec_sel(a._vec0, b._vec0, mask_1st), a._vec1};
   }
 
   template <uint64_t mask>
-  static std::enable_if_t<blendChoiceComplex(mask) == 5, Vec256<ComplexFlt>>
-      __inline_attrs blend(const Vec256<ComplexFlt>& a,
-                           const Vec256<ComplexFlt>& b) {
+  static std::enable_if_t<blendChoiceComplex(mask) == 5, Vec256<StdComplexFlt>>
+      __inline_attrs blend(const Vec256<StdComplexFlt>& a,
+                           const Vec256<StdComplexFlt>& b) {
     const __vib mask_1st = VsxComplexMask1(mask);
     return {(__vf)vec_sel(a._vec0, b._vec0, mask_1st), b._vec1};
   }
 
   template <uint64_t mask>
-  static std::enable_if_t<blendChoiceComplex(mask) == 6, Vec256<ComplexFlt>>
-      __inline_attrs blend(const Vec256<ComplexFlt>& a,
-                           const Vec256<ComplexFlt>& b) {
+  static std::enable_if_t<blendChoiceComplex(mask) == 6, Vec256<StdComplexFlt>>
+      __inline_attrs blend(const Vec256<StdComplexFlt>& a,
+                           const Vec256<StdComplexFlt>& b) {
     const __vib mask_2nd = VsxComplexMask2(mask);
     // generated masks
     return {a._vec0, (__vf)vec_sel(a._vec1, b._vec1, mask_2nd)};
   }
 
   template <uint64_t mask>
-  static std::enable_if_t<blendChoiceComplex(mask) == 7, Vec256<ComplexFlt>>
-      __inline_attrs blend(const Vec256<ComplexFlt>& a,
-                           const Vec256<ComplexFlt>& b) {
+  static std::enable_if_t<blendChoiceComplex(mask) == 7, Vec256<StdComplexFlt>>
+      __inline_attrs blend(const Vec256<StdComplexFlt>& a,
+                           const Vec256<StdComplexFlt>& b) {
     const __vib mask_2nd = VsxComplexMask2(mask);
     // generated masks
     return {b._vec0, (__vf)vec_sel(a._vec1, b._vec1, mask_2nd)};
   }
 
   template <uint64_t mask>
-  static std::enable_if_t<blendChoiceComplex(mask) == 8, Vec256<ComplexFlt>>
-      __inline_attrs blend(const Vec256<ComplexFlt>& a,
-                           const Vec256<ComplexFlt>& b) {
+  static std::enable_if_t<blendChoiceComplex(mask) == 8, Vec256<StdComplexFlt>>
+      __inline_attrs blend(const Vec256<StdComplexFlt>& a,
+                           const Vec256<StdComplexFlt>& b) {
     const __vib mask_1st = VsxComplexMask1(mask);
     const __vib mask_2nd = VsxComplexMask2(mask);
     return {(__vf)vec_sel(a._vec0, b._vec0, mask_1st),
@@ -124,19 +124,19 @@ class Vec256<ComplexFlt> {
   }
 
   template <int64_t mask>
-  static Vec256<ComplexFlt> __inline_attrs
-  el_blend(const Vec256<ComplexFlt>& a, const Vec256<ComplexFlt>& b) {
+  static Vec256<StdComplexFlt> __inline_attrs
+  el_blend(const Vec256<StdComplexFlt>& a, const Vec256<StdComplexFlt>& b) {
     const __vib mask_1st = VsxMask1(mask);
     const __vib mask_2nd = VsxMask2(mask);
     return {(__vf)vec_sel(a._vec0, b._vec0, mask_1st),
             (__vf)vec_sel(a._vec1, b._vec1, mask_2nd)};
   }
 
-  static Vec256<ComplexFlt> blendv(const Vec256<ComplexFlt>& a,
-                                   const Vec256<ComplexFlt>& b,
-                                   const Vec256<ComplexFlt>& mask) {
+  static Vec256<StdComplexFlt> blendv(const Vec256<StdComplexFlt>& a,
+                                   const Vec256<StdComplexFlt>& b,
+                                   const Vec256<StdComplexFlt>& mask) {
     // convert std::complex<V> index mask to V index mask: xy -> xxyy
-    auto mask_complex = Vec256<ComplexFlt>(vec_mergeh(mask._vec0, mask._vec0),
+    auto mask_complex = Vec256<StdComplexFlt>(vec_mergeh(mask._vec0, mask._vec0),
                                            vec_mergeh(mask._vec1, mask._vec1));
     // mask_complex.dump();
     return {
@@ -145,9 +145,9 @@ class Vec256<ComplexFlt> {
     };
   }
 
-  static Vec256<ComplexFlt> elwise_blendv(const Vec256<ComplexFlt>& a,
-                                          const Vec256<ComplexFlt>& b,
-                                          const Vec256<ComplexFlt>& mask) {
+  static Vec256<StdComplexFlt> elwise_blendv(const Vec256<StdComplexFlt>& a,
+                                          const Vec256<StdComplexFlt>& b,
+                                          const Vec256<StdComplexFlt>& mask) {
     return {
         vec_sel(a._vec0, b._vec0, mask._vec0),
         vec_sel(a._vec1, b._vec1, mask._vec1),
@@ -155,13 +155,13 @@ class Vec256<ComplexFlt> {
   }
 
   template <typename step_t>
-  static Vec256<ComplexFlt> arange(ComplexFlt base = 0.,
+  static Vec256<StdComplexFlt> arange(StdComplexFlt base = 0.,
                                    step_t step = static_cast<step_t>(1)) {
-    return Vec256<ComplexFlt>(base, base + step, base + ComplexFlt(2) * step,
-                              base + ComplexFlt(3) * step);
+    return Vec256<StdComplexFlt>(base, base + step, base + StdComplexFlt(2) * step,
+                              base + StdComplexFlt(3) * step);
   }
-  static Vec256<ComplexFlt> set(const Vec256<ComplexFlt>& a,
-                                const Vec256<ComplexFlt>& b,
+  static Vec256<StdComplexFlt> set(const Vec256<StdComplexFlt>& a,
+                                const Vec256<StdComplexFlt>& b,
                                 int64_t count = size()) {
     switch (count) {
       case 0:
@@ -202,11 +202,11 @@ class Vec256<ComplexFlt> {
     }
   }
 
-  const ComplexFlt& operator[](int idx) const = delete;
-  ComplexFlt& operator[](int idx) = delete;
+  const StdComplexFlt& operator[](int idx) const = delete;
+  StdComplexFlt& operator[](int idx) = delete;
 
-  Vec256<ComplexFlt> map(ComplexFlt (*f)(const ComplexFlt&)) const {
-    __at_align32__ ComplexFlt tmp[size()];
+  Vec256<StdComplexFlt> map(StdComplexFlt (*f)(const StdComplexFlt&)) const {
+    __at_align32__ StdComplexFlt tmp[size()];
     store(tmp);
     for (int i = 0; i < size(); i++) {
       tmp[i] = f(tmp[i]);
@@ -214,8 +214,8 @@ class Vec256<ComplexFlt> {
     return loadu(tmp);
   }
 
-  static Vec256<ComplexFlt> horizontal_add_permD8(Vec256<ComplexFlt>& first,
-                                                  Vec256<ComplexFlt>& second) {
+  static Vec256<StdComplexFlt> horizontal_add_permD8(Vec256<StdComplexFlt>& first,
+                                                  Vec256<StdComplexFlt>& second) {
     // we will simulate it differently with 6 instructions total
     // lets permute second so that we can add it getting horizontall sums
     auto first_perm = first.el_swapped();    // 2perm
@@ -227,8 +227,8 @@ class Vec256<ComplexFlt> {
     return el_mergee(first_ret, second_ret);  // 2 mergee's
   }
 
-  static Vec256<ComplexFlt> horizontal_sub_permD8(Vec256<ComplexFlt>& first,
-                                                  Vec256<ComplexFlt>& second) {
+  static Vec256<StdComplexFlt> horizontal_sub_permD8(Vec256<StdComplexFlt>& first,
+                                                  Vec256<StdComplexFlt>& second) {
     // we will simulate it differently with 6 instructions total
     // lets permute second so that we can add it getting horizontall sums
     auto first_perm = first.el_swapped();    // 2perm
@@ -240,69 +240,69 @@ class Vec256<ComplexFlt> {
     return el_mergee(first_ret, second_ret);  // 2 mergee's
   }
 
-  Vec256<ComplexFlt> abs_2_() const {
+  Vec256<StdComplexFlt> abs_2_() const {
     auto a = (*this).elwise_mult(*this);
     auto permuted = a.el_swapped();
     a = a + permuted;
     return a.el_mergee();
   }
 
-  Vec256<ComplexFlt> abs_() const {
+  Vec256<StdComplexFlt> abs_() const {
     auto ret = abs_2_();
     return ret.elwise_sqrt();
   }
 
-  Vec256<ComplexFlt> abs() const { return abs_() & real_mask; }
+  Vec256<StdComplexFlt> abs() const { return abs_() & real_mask; }
 
-  Vec256<ComplexFlt> real_() const { return *this & real_mask; }
-  Vec256<ComplexFlt> real() const { return *this & real_mask; }
-  Vec256<ComplexFlt> imag_() const { return *this & imag_mask; }
-  Vec256<ComplexFlt> imag() const {
+  Vec256<StdComplexFlt> real_() const { return *this & real_mask; }
+  Vec256<StdComplexFlt> real() const { return *this & real_mask; }
+  Vec256<StdComplexFlt> imag_() const { return *this & imag_mask; }
+  Vec256<StdComplexFlt> imag() const {
     // we can use swap_mask or sldwi
     auto ret = imag_();
     return {vec_sldw(ret._vec0, ret._vec0, 3),
             vec_sldw(ret._vec1, ret._vec1, 3)};
   }
 
-  Vec256<ComplexFlt> conj_() const { return *this ^ isign_mask; }
-  Vec256<ComplexFlt> conj() const { return *this ^ isign_mask; }
+  Vec256<StdComplexFlt> conj_() const { return *this ^ isign_mask; }
+  Vec256<StdComplexFlt> conj() const { return *this ^ isign_mask; }
 
-  Vec256<ComplexFlt> log() const {
+  Vec256<StdComplexFlt> log() const {
     // Most trigonomic ops use the log() op to improve complex number
     // performance.
     return map(std::log);
   }
 
-  Vec256<ComplexFlt> log2() const {
+  Vec256<StdComplexFlt> log2() const {
     // log2eB_inv
     auto ret = log();
     return ret.elwise_mult(log2e_inv);
   }
-  Vec256<ComplexFlt> log10() const {
+  Vec256<StdComplexFlt> log10() const {
     auto ret = log();
     return ret.elwise_mult(log10e_inv);
   }
 
 
-  Vec256<ComplexFlt> el_swapped() const {
+  Vec256<StdComplexFlt> el_swapped() const {
     __vf v0 = vec_perm(_vec0, _vec0, swap_mask);
     __vf v1 = vec_perm(_vec1, _vec1, swap_mask);
     return {v0, v1};
   }
 
-  Vec256<ComplexFlt> el_mergee() const {
+  Vec256<StdComplexFlt> el_mergee() const {
     // as mergee phased in , we can use vec_perm with mask
     return {vec_mergee(_vec0, _vec0), vec_mergee(_vec1, _vec1)};
   }
 
-  static Vec256<ComplexFlt> el_mergee(Vec256<ComplexFlt>& first,
-                                      Vec256<ComplexFlt>& second) {
+  static Vec256<StdComplexFlt> el_mergee(Vec256<StdComplexFlt>& first,
+                                      Vec256<StdComplexFlt>& second) {
     // as mergee phased in , we can use vec_perm with mask
     return {vec_mergee(first._vec0, second._vec0),
             vec_mergee(first._vec1, second._vec1)};
   }
 
-  Vec256<ComplexFlt> angle_() const {
+  Vec256<StdComplexFlt> angle_() const {
     // angle = atan2(b/a)
     // auto b_a = _mm256_permute_ps(values, 0xB1); // b        a
     // return Sleef_atan2f8_u10(values, b_a); // 90-angle angle
@@ -314,34 +314,34 @@ class Vec256<ComplexFlt> {
     return ret;
   }
 
-  Vec256<ComplexFlt> angle() const {
+  Vec256<StdComplexFlt> angle() const {
     auto a = angle_().el_swapped();
     return a & real_mask;
   }
 
 
-  Vec256<ComplexFlt> sin() const { return map(std::sin); }
-  Vec256<ComplexFlt> sinh() const { return map(std::sinh); }
-  Vec256<ComplexFlt> cos() const { return map(std::cos); }
-  Vec256<ComplexFlt> cosh() const { return map(std::cosh); }
-  Vec256<ComplexFlt> ceil() const { return {vec_ceil(_vec0), vec_ceil(_vec1)}; }
-  Vec256<ComplexFlt> floor() const {
+  Vec256<StdComplexFlt> sin() const { return map(std::sin); }
+  Vec256<StdComplexFlt> sinh() const { return map(std::sinh); }
+  Vec256<StdComplexFlt> cos() const { return map(std::cos); }
+  Vec256<StdComplexFlt> cosh() const { return map(std::cosh); }
+  Vec256<StdComplexFlt> ceil() const { return {vec_ceil(_vec0), vec_ceil(_vec1)}; }
+  Vec256<StdComplexFlt> floor() const {
     return {vec_floor(_vec0), vec_floor(_vec1)};
   }
-  Vec256<ComplexFlt> neg() const {
-    auto z = Vec256<ComplexFlt>(zero);
+  Vec256<StdComplexFlt> neg() const {
+    auto z = Vec256<StdComplexFlt>(zero);
     return z - *this;
   }
-  Vec256<ComplexFlt> round() const {
+  Vec256<StdComplexFlt> round() const {
     return {vec_round(_vec0), vec_round(_vec1)};
   }
-  Vec256<ComplexFlt> tan() const { return map(std::tan); }
-  Vec256<ComplexFlt> tanh() const { return map(std::tanh); }
-  Vec256<ComplexFlt> trunc() const {
+  Vec256<StdComplexFlt> tan() const { return map(std::tan); }
+  Vec256<StdComplexFlt> tanh() const { return map(std::tanh); }
+  Vec256<StdComplexFlt> trunc() const {
     return {vec_trunc(_vec0), vec_trunc(_vec1)};
   }
 
-  Vec256<ComplexFlt> elwise_sqrt() const {
+  Vec256<StdComplexFlt> elwise_sqrt() const {
     return {vec_sqrt(_vec0), vec_sqrt(_vec1)};
   }
 
@@ -352,7 +352,7 @@ class Vec256<ComplexFlt> {
               << _vec1[3] << std::endl;
   }
 
-  Vec256<ComplexFlt> sqrt() const {
+  Vec256<StdComplexFlt> sqrt() const {
     //   sqrt(a + bi)
     // = sqrt(2)/2 * [sqrt(sqrt(a**2 + b**2) + a) + sgn(b)*sqrt(sqrt(a**2 +
     // b**2) - a)i] = sqrt(2)/2 * [sqrt(abs() + a) + sgn(b)*sqrt(abs() - a)i]
@@ -367,7 +367,7 @@ class Vec256<ComplexFlt> {
     return factor.elwise_mult(res_re_im);
   }
 
-  Vec256<ComplexFlt> reciprocal() const {
+  Vec256<StdComplexFlt> reciprocal() const {
     // re + im*i = (a + bi)  / (c + di)
     // re = (ac + bd)/abs_2() = c/abs_2()
     // im = (bc - ad)/abs_2() = d/abs_2()
@@ -376,11 +376,11 @@ class Vec256<ComplexFlt> {
     return c_d.elwise_div(abs);
   }
 
-  Vec256<ComplexFlt> rsqrt() const { return sqrt().reciprocal(); }
+  Vec256<StdComplexFlt> rsqrt() const { return sqrt().reciprocal(); }
 
-  Vec256<ComplexFlt> pow(const Vec256<ComplexFlt>& exp) const {
-    __at_align32__ ComplexFlt x_tmp[size()];
-    __at_align32__ ComplexFlt y_tmp[size()];
+  Vec256<StdComplexFlt> pow(const Vec256<StdComplexFlt>& exp) const {
+    __at_align32__ StdComplexFlt x_tmp[size()];
+    __at_align32__ StdComplexFlt y_tmp[size()];
     store(x_tmp);
     exp.store(y_tmp);
     for (int i = 0; i < size(); i++) {
@@ -389,7 +389,7 @@ class Vec256<ComplexFlt> {
     return loadu(x_tmp);
   }
 
-  Vec256<ComplexFlt> atan() const {
+  Vec256<StdComplexFlt> atan() const {
     // atan(x) = i/2 * ln((i + z)/(i - z))
     auto ione = Vec256(imag_one);
     auto sum = ione + *this;
@@ -398,12 +398,12 @@ class Vec256<ComplexFlt> {
     return ln * imag_half;        // i/2*ln()
   }
 
-  Vec256<ComplexFlt> acos() const {
+  Vec256<StdComplexFlt> acos() const {
     // acos(x) = pi/2 - asin(x)
     return Vec256(pi_2) - asin();
   }
 
-  Vec256<ComplexFlt> inline operator*(const Vec256<ComplexFlt>& b) const {
+  Vec256<StdComplexFlt> inline operator*(const Vec256<StdComplexFlt>& b) const {
     //(a + bi)  * (c + di) = (ac - bd) + (ad + bc)i
     auto ac_bd = elwise_mult(b);
     auto d_c = b.el_swapped();
@@ -413,7 +413,7 @@ class Vec256<ComplexFlt> {
     return ret;
   }
 
-  Vec256<ComplexFlt> inline operator/(const Vec256<ComplexFlt>& b) const {
+  Vec256<StdComplexFlt> inline operator/(const Vec256<StdComplexFlt>& b) const {
     // re + im*i = (a + bi)  / (c + di)
     // re = (ac + bd)/abs_2()
     // im = (bc - ad)/abs_2()
@@ -428,7 +428,7 @@ class Vec256<ComplexFlt> {
     return ret;
   }
 
-  Vec256<ComplexFlt> asin() const {
+  Vec256<StdComplexFlt> asin() const {
     // asin(x)
     // = -i*ln(iz + sqrt(1 -z^2))
     // = -i*ln((ai - b) + sqrt(1 - (a + bi)*(a + bi)))
@@ -442,7 +442,7 @@ class Vec256<ComplexFlt> {
     auto val_2 = (*this).elwise_mult(*this);
     auto val_2_swapped = val_2.el_swapped();
     auto re = horizontal_sub_permD8(val_2, val_2_swapped);
-    re = Vec256<ComplexFlt>(one) - re;
+    re = Vec256<StdComplexFlt>(one) - re;
     auto root = el_blend<0xAA>(re, im).sqrt();
     auto ln = (b_a + root).log();
     return ln.el_swapped().conj();
@@ -451,92 +451,92 @@ class Vec256<ComplexFlt> {
 #endif
   }
 
-  Vec256<ComplexFlt> exp() const { 
+  Vec256<StdComplexFlt> exp() const { 
     return map(std::exp);
   }
 
 
 
-  Vec256<ComplexFlt> eq(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> eq(const Vec256<StdComplexFlt>& other) const {
     auto ret = (*this == other);
     return ret & one;
   }
-  Vec256<ComplexFlt> ne(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> ne(const Vec256<StdComplexFlt>& other) const {
     auto ret = (*this != other);
     return ret & one;
   }
 
-  Vec256<ComplexFlt> atan2(const Vec256<ComplexFlt>& b) const {
+  Vec256<StdComplexFlt> atan2(const Vec256<StdComplexFlt>& b) const {
       AT_ERROR("not supported for complex numbers");
   }
-  Vec256<ComplexFlt> erf() const {
+  Vec256<StdComplexFlt> erf() const {
       AT_ERROR("not supported for complex numbers");
   }
-  Vec256<ComplexFlt> erfc() const {
-      AT_ERROR("not supported for complex numbers");
-  }
-
-  Vec256<ComplexFlt> log1p() const {
+  Vec256<StdComplexFlt> erfc() const {
       AT_ERROR("not supported for complex numbers");
   }
 
-  Vec256<ComplexFlt> expm1() const {
+  Vec256<StdComplexFlt> log1p() const {
       AT_ERROR("not supported for complex numbers");
   }
 
-  Vec256<ComplexFlt> operator<(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> expm1() const {
+      AT_ERROR("not supported for complex numbers");
+  }
+
+  Vec256<StdComplexFlt> operator<(const Vec256<StdComplexFlt>& other) const {
       TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexFlt> operator<=(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> operator<=(const Vec256<StdComplexFlt>& other) const {
       TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexFlt> operator>(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> operator>(const Vec256<StdComplexFlt>& other) const {
       TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexFlt> operator>=(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> operator>=(const Vec256<StdComplexFlt>& other) const {
       TORCH_CHECK(false, "not supported for complex numbers");
   }
 
-  Vec256<ComplexFlt> lt(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> lt(const Vec256<StdComplexFlt>& other) const {
       TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexFlt> le(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> le(const Vec256<StdComplexFlt>& other) const {
       TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexFlt> gt(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> gt(const Vec256<StdComplexFlt>& other) const {
       TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexFlt> ge(const Vec256<ComplexFlt>& other) const {
+  Vec256<StdComplexFlt> ge(const Vec256<StdComplexFlt>& other) const {
       TORCH_CHECK(false, "not supported for complex numbers");
   }
 
 
-  DEFINE_MEMBER_OP(operator==, ComplexFlt, vec_cmpeq)
-  DEFINE_MEMBER_OP(operator!=, ComplexFlt, vec_cmpne)
+  DEFINE_MEMBER_OP(operator==, StdComplexFlt, vec_cmpeq)
+  DEFINE_MEMBER_OP(operator!=, StdComplexFlt, vec_cmpne)
 
-  DEFINE_MEMBER_OP(operator+, ComplexFlt, vec_add)
-  DEFINE_MEMBER_OP(operator-, ComplexFlt, vec_sub)
-  DEFINE_MEMBER_OP(operator&, ComplexFlt, vec_and)
-  DEFINE_MEMBER_OP(operator|, ComplexFlt, vec_or)
-  DEFINE_MEMBER_OP(operator^, ComplexFlt, vec_xor)
+  DEFINE_MEMBER_OP(operator+, StdComplexFlt, vec_add)
+  DEFINE_MEMBER_OP(operator-, StdComplexFlt, vec_sub)
+  DEFINE_MEMBER_OP(operator&, StdComplexFlt, vec_and)
+  DEFINE_MEMBER_OP(operator|, StdComplexFlt, vec_or)
+  DEFINE_MEMBER_OP(operator^, StdComplexFlt, vec_xor)
   // elelemtwise helpers
-  DEFINE_MEMBER_OP(elwise_mult, ComplexFlt, vec_mul)
-  DEFINE_MEMBER_OP(elwise_div, ComplexFlt, vec_div)
-  DEFINE_MEMBER_OP(elwise_gt, ComplexFlt, vec_cmpgt)
-  DEFINE_MEMBER_OP(elwise_ge, ComplexFlt, vec_cmpge)
-  DEFINE_MEMBER_OP(elwise_lt, ComplexFlt, vec_cmplt)
-  DEFINE_MEMBER_OP(elwise_le, ComplexFlt, vec_cmple)
+  DEFINE_MEMBER_OP(elwise_mult, StdComplexFlt, vec_mul)
+  DEFINE_MEMBER_OP(elwise_div, StdComplexFlt, vec_div)
+  DEFINE_MEMBER_OP(elwise_gt, StdComplexFlt, vec_cmpgt)
+  DEFINE_MEMBER_OP(elwise_ge, StdComplexFlt, vec_cmpge)
+  DEFINE_MEMBER_OP(elwise_lt, StdComplexFlt, vec_cmplt)
+  DEFINE_MEMBER_OP(elwise_le, StdComplexFlt, vec_cmple)
 };
 
 template <>
-Vec256<ComplexFlt> inline maximum(const Vec256<ComplexFlt>& a,
-                                  const Vec256<ComplexFlt>& b) {
+Vec256<StdComplexFlt> inline maximum(const Vec256<StdComplexFlt>& a,
+                                  const Vec256<StdComplexFlt>& b) {
   auto abs_a = a.abs_2_();
   auto abs_b = b.abs_2_();
   // auto mask = _mm256_cmp_ps(abs_a, abs_b, _CMP_LT_OQ);
   // auto max = _mm256_blendv_ps(a, b, mask);
   auto mask = abs_a.elwise_lt(abs_b);
-  auto max = Vec256<ComplexFlt>::elwise_blendv(a, b, mask);
+  auto max = Vec256<StdComplexFlt>::elwise_blendv(a, b, mask);
 
   return max;
   // Exploit the fact that all-ones is a NaN.
@@ -545,14 +545,14 @@ Vec256<ComplexFlt> inline maximum(const Vec256<ComplexFlt>& a,
 }
 
 template <>
-Vec256<ComplexFlt> inline minimum(const Vec256<ComplexFlt>& a,
-                                  const Vec256<ComplexFlt>& b) {
+Vec256<StdComplexFlt> inline minimum(const Vec256<StdComplexFlt>& a,
+                                  const Vec256<StdComplexFlt>& b) {
   auto abs_a = a.abs_2_();
   auto abs_b = b.abs_2_();
   // auto mask = _mm256_cmp_ps(abs_a, abs_b, _CMP_GT_OQ);
   // auto min = _mm256_blendv_ps(a, b, mask);
   auto mask = abs_a.elwise_gt(abs_b);
-  auto min = Vec256<ComplexFlt>::elwise_blendv(a, b, mask);
+  auto min = Vec256<StdComplexFlt>::elwise_blendv(a, b, mask);
   return min;
   // Exploit the fact that all-ones is a NaN.
   // auto isnan = _mm256_cmp_ps(abs_a, abs_b, _CMP_UNORD_Q);
@@ -560,9 +560,9 @@ Vec256<ComplexFlt> inline minimum(const Vec256<ComplexFlt>& a,
 }
 
 template <>
-Vec256<ComplexFlt> inline clamp(const Vec256<ComplexFlt>& a,
-                                const Vec256<ComplexFlt>& min,
-                                const Vec256<ComplexFlt>& max) {
+Vec256<StdComplexFlt> inline clamp(const Vec256<StdComplexFlt>& a,
+                                const Vec256<StdComplexFlt>& min,
+                                const Vec256<StdComplexFlt>& max) {
   auto abs_a = a.abs_2_();
   auto abs_min = min.abs_2_();
   // auto max_mask = _mm256_cmp_ps(abs_a, abs_min, _CMP_LT_OQ);
@@ -571,30 +571,30 @@ Vec256<ComplexFlt> inline clamp(const Vec256<ComplexFlt>& a,
   // auto min_mask = _mm256_cmp_ps(abs_a, abs_max, _CMP_GT_OQ);
   auto min_mask = abs_a.elwise_lt(abs_max);
   // return _mm256_blendv_ps(_mm256_blendv_ps(a, min, max_mask), max, min_mask);
-  auto f = Vec256<ComplexFlt>::elwise_blendv(a, min, max_mask);
-  return Vec256<ComplexFlt>::elwise_blendv(f, max, min_mask);
+  auto f = Vec256<StdComplexFlt>::elwise_blendv(a, min, max_mask);
+  return Vec256<StdComplexFlt>::elwise_blendv(f, max, min_mask);
 }
 
 template <>
-Vec256<ComplexFlt> inline clamp_min(const Vec256<ComplexFlt>& a,
-                                    const Vec256<ComplexFlt>& min) {
+Vec256<StdComplexFlt> inline clamp_min(const Vec256<StdComplexFlt>& a,
+                                    const Vec256<StdComplexFlt>& min) {
   auto abs_a = a.abs_2_();
   auto abs_min = min.abs_2_();
   // auto max_mask = _mm256_cmp_ps(abs_a, abs_min, _CMP_LT_OQ);
   // return _mm256_blendv_ps(a, min, max_mask);
   auto max_mask = abs_a.elwise_lt(abs_min);
-  return Vec256<ComplexFlt>::elwise_blendv(a, min, max_mask);
+  return Vec256<StdComplexFlt>::elwise_blendv(a, min, max_mask);
 }
 
 template <>
-Vec256<ComplexFlt> inline clamp_max(const Vec256<ComplexFlt>& a,
-                                    const Vec256<ComplexFlt>& max) {
+Vec256<StdComplexFlt> inline clamp_max(const Vec256<StdComplexFlt>& a,
+                                    const Vec256<StdComplexFlt>& max) {
   auto abs_a = a.abs_2_();
   auto abs_max = max.abs_2_();
   // auto min_mask = _mm256_cmp_ps(abs_a, abs_max, _CMP_GT_OQ);
   // return _mm256_blendv_ps(a, max, min_mask);
   auto min_mask = abs_a.elwise_lt(abs_max);
-  return Vec256<ComplexFlt>::elwise_blendv(a, max, min_mask);
+  return Vec256<StdComplexFlt>::elwise_blendv(a, max, min_mask);
 }
 
 }  // namespace

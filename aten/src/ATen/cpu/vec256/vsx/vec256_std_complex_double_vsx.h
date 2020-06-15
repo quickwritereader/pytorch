@@ -7,10 +7,10 @@ namespace at {
 namespace vec256 {
 // See Note [Acceptable use of anonymous namespace in header]
 namespace {
-using ComplexDbl = std::complex<double>;
+using StdComplexDbl = std::complex<double>;
 
 template <>
-class Vec256<ComplexDbl> {
+class Vec256<StdComplexDbl> {
   union {
     struct {
       __vd _vec0;
@@ -24,7 +24,7 @@ class Vec256<ComplexDbl> {
   } __attribute__((__may_alias__));
 
  public:
-  using value_type = ComplexDbl;
+  using value_type = StdComplexDbl;
   using vec_internal_type = __vd;
   using vec_internal_mask_type = __vllb;
   static constexpr int size() { return 2; }
@@ -34,13 +34,13 @@ class Vec256<ComplexDbl> {
   __inline_attrs Vec256(__vd v1, __vd v2) : _vec0{v1}, _vec1{v2} {}
   __inline_attrs Vec256(__vllb v1, __vllb v2) : _vecb0{v1}, _vecb1{v2} {}
 
-  Vec256(ComplexDbl val) {
+  Vec256(StdComplexDbl val) {
     double real_value = val.real();
     double imag_value = val.imag();
     _vec0 = __vd{real_value, imag_value};
     _vec1 = __vd{real_value, imag_value};
   }
-  Vec256(ComplexDbl val1, ComplexDbl val2) {
+  Vec256(StdComplexDbl val1, StdComplexDbl val2) {
     _vec0 = __vd{val1.real(), val1.imag()};
     _vec1 = __vd{val2.real(), val2.imag()};
   }
@@ -49,66 +49,66 @@ class Vec256<ComplexDbl> {
   inline __inline_attrs const vec_internal_type& vec1() const { return _vec1; }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceComplexDbl(mask) == 0, Vec256<ComplexDbl>>
-      __inline_attrs blend(const Vec256<ComplexDbl>& a,
-                           const Vec256<ComplexDbl>& b) {
+  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 0, Vec256<StdComplexDbl>>
+      __inline_attrs blend(const Vec256<StdComplexDbl>& a,
+                           const Vec256<StdComplexDbl>& b) {
     return a;
   }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceComplexDbl(mask) == 1, Vec256<ComplexDbl>>
-      __inline_attrs blend(const Vec256<ComplexDbl>& a,
-                           const Vec256<ComplexDbl>& b) {
+  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 1, Vec256<StdComplexDbl>>
+      __inline_attrs blend(const Vec256<StdComplexDbl>& a,
+                           const Vec256<StdComplexDbl>& b) {
     return b;
   }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceComplexDbl(mask) == 2, Vec256<ComplexDbl>>
-      __inline_attrs blend(const Vec256<ComplexDbl>& a,
-                           const Vec256<ComplexDbl>& b) {
+  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 2, Vec256<StdComplexDbl>>
+      __inline_attrs blend(const Vec256<StdComplexDbl>& a,
+                           const Vec256<StdComplexDbl>& b) {
     return {b._vec0, a._vec1};
   }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceComplexDbl(mask) == 3, Vec256<ComplexDbl>>
-      __inline_attrs blend(const Vec256<ComplexDbl>& a,
-                           const Vec256<ComplexDbl>& b) {
+  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 3, Vec256<StdComplexDbl>>
+      __inline_attrs blend(const Vec256<StdComplexDbl>& a,
+                           const Vec256<StdComplexDbl>& b) {
     return {a._vec0, b._vec1};
   }
 
   template <int64_t mask>
       static Vec256 <
-      ComplexDbl __inline_attrs el_blend(const Vec256<ComplexDbl>& a,
-                                         const Vec256<ComplexDbl>& b) {
+      StdComplexDbl __inline_attrs el_blend(const Vec256<StdComplexDbl>& a,
+                                         const Vec256<StdComplexDbl>& b) {
     const __vllb mask_1st = VsxDblMask1(mask);
     const __vllb mask_2nd = VsxDblMask2(mask);
     return {(__vd)vec_sel(a._vec0, b._vec0, mask_1st),
             (__vd)vec_sel(a._vec1, b._vec1, mask_2nd)};
   }
 
-  static Vec256<ComplexDbl> blendv(const Vec256<ComplexDbl>& a,
-                                   const Vec256<ComplexDbl>& b,
-                                   const Vec256<ComplexDbl>& mask) {
+  static Vec256<StdComplexDbl> blendv(const Vec256<StdComplexDbl>& a,
+                                   const Vec256<StdComplexDbl>& b,
+                                   const Vec256<StdComplexDbl>& mask) {
     // convert std::complex<V> index mask to V index mask: xy -> xxyy
     auto mask_complex =
-        Vec256<ComplexDbl>(vec_splat(mask._vec0, 0), vec_splat(mask._vec1, 0));
+        Vec256<StdComplexDbl>(vec_splat(mask._vec0, 0), vec_splat(mask._vec1, 0));
     return {vec_sel(a._vec0, b._vec0, mask_complex._vecb0),
             vec_sel(a._vec1, b._vec1, mask_complex._vecb1)};
   }
 
-  static Vec256<ComplexDbl> __inline_attrs
-  el_blendv(const Vec256<ComplexDbl>& a, const Vec256<ComplexDbl>& b,
-            const Vec256<ComplexDbl>& mask) {
+  static Vec256<StdComplexDbl> __inline_attrs
+  el_blendv(const Vec256<StdComplexDbl>& a, const Vec256<StdComplexDbl>& b,
+            const Vec256<StdComplexDbl>& mask) {
     return {vec_sel(a._vec0, b._vec0, mask._vecb0),
             vec_sel(a._vec1, b._vec1, mask._vecb1)};
   }
   template <typename step_t>
-  static Vec256<ComplexDbl> arange(ComplexDbl base = 0.,
+  static Vec256<StdComplexDbl> arange(StdComplexDbl base = 0.,
                                    step_t step = static_cast<step_t>(1)) {
-    return Vec256<ComplexDbl>(base, base + step);
+    return Vec256<StdComplexDbl>(base, base + step);
   }
-  static Vec256<ComplexDbl> set(const Vec256<ComplexDbl>& a,
-                                const Vec256<ComplexDbl>& b,
+  static Vec256<StdComplexDbl> set(const Vec256<StdComplexDbl>& a,
+                                const Vec256<StdComplexDbl>& b,
                                 int64_t count = size()) {
     switch (count) {
       case 0:
@@ -145,10 +145,10 @@ class Vec256<ComplexDbl> {
     }
   }
 
-  const ComplexDbl& operator[](int idx) const = delete;
-  ComplexDbl& operator[](int idx) = delete;
-  Vec256<ComplexDbl> map(ComplexDbl (*f)(const ComplexDbl&)) const {
-    __at_align32__ ComplexDbl tmp[size()];
+  const StdComplexDbl& operator[](int idx) const = delete;
+  StdComplexDbl& operator[](int idx) = delete;
+  Vec256<StdComplexDbl> map(StdComplexDbl (*f)(const StdComplexDbl&)) const {
+    __at_align32__ StdComplexDbl tmp[size()];
     store(tmp);
     for (int i = 0; i < size(); i++) {
       tmp[i] = f(tmp[i]);
@@ -156,26 +156,26 @@ class Vec256<ComplexDbl> {
     return loadu(tmp);
   }
 
-  Vec256<ComplexDbl> el_swapped() const {
+  Vec256<StdComplexDbl> el_swapped() const {
     __vd v0 = vec_xxpermdi(_vec0, _vec0, 2);
     __vd v1 = vec_xxpermdi(_vec1, _vec1, 2);
     return {v0, v1};
   }
 
-  Vec256<ComplexDbl> get_evens() const {
+  Vec256<StdComplexDbl> get_evens() const {
     __vd v0 = vec_splats(_vec0, _vec0, 0);
     __vd v1 = vec_splats(_vec1, _vec1, 0);
     return {v0, v1};
   }
 
-  static Vec256<ComplexDbl> get_evens(Vec256<ComplexDbl>& first,
-                                      Vec256<ComplexDbl>& second) {
+  static Vec256<StdComplexDbl> get_evens(Vec256<StdComplexDbl>& first,
+                                      Vec256<StdComplexDbl>& second) {
     // as mergee phased in , we can use vec_perm with mask
     return {vec_mergeh(first._vec0, second._vec0),
             vec_mergeh(first._vec1, second._vec1)};
   }
 
-  Vec256<ComplexDbl> abs_2_() const {
+  Vec256<StdComplexDbl> abs_2_() const {
     auto a = (*this).elwise_mult(*this);
     auto permuted = a.el_swapped();
     a = a + permuted;
@@ -189,7 +189,7 @@ class Vec256<ComplexDbl> {
 
   Vec256<std::complex<float>> abs() const { return abs_() & real_mask; }
 
-  Vec256<ComplexDbl> angle_() const {
+  Vec256<StdComplexDbl> angle_() const {
     // angle = atan2(b/a)
     // auto b_a = _mm256_permute_pd(values, 0x05);     // b        a
     // return Sleef_atan2d4_u10(values, b_a);          // 90-angle angle
@@ -201,37 +201,37 @@ class Vec256<ComplexDbl> {
     return ret;
   }
 
-  Vec256<ComplexDbl> angle() const {
+  Vec256<StdComplexDbl> angle() const {
     auto a = angle_().el_swapped();
     return a & vd_real_mask;
   }
 
-  Vec256<ComplexDbl> real_() const { return *this & vd_real_mask; }
-  Vec256<ComplexDbl> real() const { return *this & vd_real_mask; }
-  Vec256<ComplexDbl> imag_() const { return *this & vd_imag_mask; }
-  Vec256<ComplexDbl> imag() const { return imag_().el_swapped(); }
+  Vec256<StdComplexDbl> real_() const { return *this & vd_real_mask; }
+  Vec256<StdComplexDbl> real() const { return *this & vd_real_mask; }
+  Vec256<StdComplexDbl> imag_() const { return *this & vd_imag_mask; }
+  Vec256<StdComplexDbl> imag() const { return imag_().el_swapped(); }
 
-  Vec256<ComplexDbl> conj_() const { return *this ^ vd_isign_mask; }
-  Vec256<ComplexDbl> conj() const { return *this ^ vd_isign_mask; }
+  Vec256<StdComplexDbl> conj_() const { return *this ^ vd_isign_mask; }
+  Vec256<StdComplexDbl> conj() const { return *this ^ vd_isign_mask; }
 
-  Vec256<ComplexDbl> log() const {
+  Vec256<StdComplexDbl> log() const {
     // Most trigonomic ops use the log() op to improve complex number
     // performance.
     return map(std::log);
   }
 
-  Vec256<ComplexDbl> log2() const {
+  Vec256<StdComplexDbl> log2() const {
     // log2eB_inv
     auto ret = log();
     return ret.elwise_mult(log2e_inv);
   }
-  Vec256<ComplexDbl> log10() const {
+  Vec256<StdComplexDbl> log10() const {
     auto ret = log();
     return ret.elwise_mult(log10e_inv);
   }
 
 
-  Vec256<ComplexDbl> asin() const {
+  Vec256<StdComplexDbl> asin() const {
     // asin(x)
     // = -i*ln(iz + sqrt(1 -z^2))
     // = -i*ln((ai - b) + sqrt(1 - (a + bi)*(a + bi)))
@@ -244,7 +244,7 @@ class Vec256<ComplexDbl> {
     auto val_2 = (*this).elwise_mult(*this);
     auto val_2_swapped = val_2.el_swapped();
     auto re = horizontal_sub(val_2, val_2_swapped);
-    re = Vec256<ComplexDbl>(vd_one) - re;
+    re = Vec256<StdComplexDbl>(vd_one) - re;
     auto root = el_blend<0x0A>(re, im).sqrt();
     auto ln = (b_a + root).log();
     return ln.el_swapped().conj();
@@ -253,12 +253,12 @@ class Vec256<ComplexDbl> {
 #endif
   }
 
-  Vec256<ComplexDbl> acos() const {
+  Vec256<StdComplexDbl> acos() const {
     // acos(x) = pi/2 - asin(x)
     return Vec256(vd_pi_2) - asin();
   }
 
-  Vec256<ComplexDbl> atan() const {
+  Vec256<StdComplexDbl> atan() const {
     // atan(x) = i/2 * ln((i + z)/(i - z))
     auto ione = Vec256(vd_imag_one);
     auto sum = ione + *this;
@@ -267,26 +267,26 @@ class Vec256<ComplexDbl> {
     return ln * vd_imag_half;     // i/2*ln()
   }
 
-  Vec256<ComplexDbl> sin() const { return map(std::sin); }
-  Vec256<ComplexDbl> sinh() const { return map(std::sinh); }
-  Vec256<ComplexDbl> cos() const { return map(std::cos); }
-  Vec256<ComplexDbl> cosh() const { return map(std::cosh); }
+  Vec256<StdComplexDbl> sin() const { return map(std::sin); }
+  Vec256<StdComplexDbl> sinh() const { return map(std::sinh); }
+  Vec256<StdComplexDbl> cos() const { return map(std::cos); }
+  Vec256<StdComplexDbl> cosh() const { return map(std::cosh); }
 
-  Vec256<ComplexDbl> tan() const { return map(std::tan); }
+  Vec256<StdComplexDbl> tan() const { return map(std::tan); }
 
-  Vec256<ComplexDbl> ceil() const { return {vec_ceil(_vec0), vec_ceil(_vec1)}; }
-  Vec256<ComplexDbl> floor() const {
+  Vec256<StdComplexDbl> ceil() const { return {vec_ceil(_vec0), vec_ceil(_vec1)}; }
+  Vec256<StdComplexDbl> floor() const {
     return {vec_floor(_vec0), vec_floor(_vec1)};
   }
-  Vec256<ComplexDbl> neg() const {
-    auto z = Vec256<ComplexDbl>(vd_zero);
+  Vec256<StdComplexDbl> neg() const {
+    auto z = Vec256<StdComplexDbl>(vd_zero);
     return z - *this;
   }
-  Vec256<ComplexDbl> round() const {
+  Vec256<StdComplexDbl> round() const {
     return {vec_round(_vec0), vec_round(_vec1)};
   }
 
-  Vec256<ComplexDbl> trunc() const {
+  Vec256<StdComplexDbl> trunc() const {
     return {vec_trunc(_vec0), vec_trunc(_vec1)};
   }
 
@@ -299,7 +299,7 @@ class Vec256<ComplexDbl> {
     std::cout << _vec1[0] << "," << _vec1[1] << std::endl;
   }
 
-  Vec256<ComplexDbl> sqrt() const {
+  Vec256<StdComplexDbl> sqrt() const {
     //   sqrt(a + bi)
     // = sqrt(2)/2 * [sqrt(sqrt(a**2 + b**2) + a) + sgn(b)*sqrt(sqrt(a**2 +
     // b**2) - a)i] = sqrt(2)/2 * [sqrt(abs() + a) + sgn(b)*sqrt(abs() - a)i]
@@ -314,7 +314,7 @@ class Vec256<ComplexDbl> {
     return factor.elwise_mult(res_re_im);
   }
 
-  Vec256<ComplexDbl> reciprocal() const {
+  Vec256<StdComplexDbl> reciprocal() const {
     // re + im*i = (a + bi)  / (c + di)
     // re = (ac + bd)/abs_2() = c/abs_2()
     // im = (bc - ad)/abs_2() = d/abs_2()
@@ -323,10 +323,10 @@ class Vec256<ComplexDbl> {
     return c_d.elwise_div(abs);
   }
 
-  Vec256<ComplexDbl> rsqrt() const { return sqrt().reciprocal(); }
+  Vec256<StdComplexDbl> rsqrt() const { return sqrt().reciprocal(); }
 
-  static Vec256<ComplexDbl> horizontal_add(Vec256<ComplexDbl>& first,
-                                           Vec256<ComplexDbl>& second) {
+  static Vec256<StdComplexDbl> horizontal_add(Vec256<StdComplexDbl>& first,
+                                           Vec256<StdComplexDbl>& second) {
     auto first_perm = first.el_swapped();    // 2perm
     auto second_perm = second.el_swapped();  // 2perm
     // summ
@@ -336,8 +336,8 @@ class Vec256<ComplexDbl> {
     return get_evens(first_ret, second_ret);  // 2 mergee's
   }
 
-  static Vec256<ComplexDbl> horizontal_sub(Vec256<ComplexDbl>& first,
-                                           Vec256<ComplexDbl>& second) {
+  static Vec256<StdComplexDbl> horizontal_sub(Vec256<StdComplexDbl>& first,
+                                           Vec256<StdComplexDbl>& second) {
     // we will simulate it differently with 6 instructions total
     // lets permute second so that we can add it getting horizontall sums
     auto first_perm = first.el_swapped();    // 2perm
@@ -349,7 +349,7 @@ class Vec256<ComplexDbl> {
     return get_evens(first_ret, second_ret);  // 2 mergee's
   }
 
-  Vec256<ComplexDbl> inline operator*(const Vec256<ComplexDbl>& b) const {
+  Vec256<StdComplexDbl> inline operator*(const Vec256<StdComplexDbl>& b) const {
     //(a + bi)  * (c + di) = (ac - bd) + (ad + bc)i
     auto ac_bd = elwise_mult(b);
     auto d_c = b.el_swapped();
@@ -359,7 +359,7 @@ class Vec256<ComplexDbl> {
     return ret;
   }
 
-  Vec256<ComplexDbl> inline operator/(const Vec256<ComplexDbl>& b) const {
+  Vec256<StdComplexDbl> inline operator/(const Vec256<StdComplexDbl>& b) const {
     // re + im*i = (a + bi)  / (c + di)
     // re = (ac + bd)/abs_2()
     // im = (bc - ad)/abs_2()
@@ -374,11 +374,11 @@ class Vec256<ComplexDbl> {
     return ret;
   }
 
-  Vec256<ComplexDbl> exp() const { return map(std::exp); }
+  Vec256<StdComplexDbl> exp() const { return map(std::exp); }
 
-  Vec256<ComplexDbl> pow(const Vec256<ComplexDbl>& exp) const {
-    __at_align32__ ComplexDbl x_tmp[size()];
-    __at_align32__ ComplexDbl y_tmp[size()];
+  Vec256<StdComplexDbl> pow(const Vec256<StdComplexDbl>& exp) const {
+    __at_align32__ StdComplexDbl x_tmp[size()];
+    __at_align32__ StdComplexDbl y_tmp[size()];
     store(x_tmp);
     exp.store(y_tmp);
     for (int i = 0; i < size(); i++) {
@@ -387,85 +387,85 @@ class Vec256<ComplexDbl> {
     return loadu(x_tmp);
   }
 
-  Vec256<ComplexDbl> log1p() const {
+  Vec256<StdComplexDbl> log1p() const {
       AT_ERROR("not supported for complex numbers");
   }
 
-  Vec256<ComplexDbl> atan2(const Vec256<ComplexDbl>& b) const {
+  Vec256<StdComplexDbl> atan2(const Vec256<StdComplexDbl>& b) const {
       AT_ERROR("not supported for complex numbers");
   }
-  Vec256<ComplexDbl> erf() const {
+  Vec256<StdComplexDbl> erf() const {
       AT_ERROR("not supported for complex numbers");
   }
-  Vec256<ComplexDbl> erfc() const {
-      AT_ERROR("not supported for complex numbers");
-  }
-
-  Vec256<ComplexDbl> expm1() const {
+  Vec256<StdComplexDbl> erfc() const {
       AT_ERROR("not supported for complex numbers");
   }
 
-  Vec256<ComplexDbl> operator<(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> expm1() const {
+      AT_ERROR("not supported for complex numbers");
+  }
+
+  Vec256<StdComplexDbl> operator<(const Vec256<StdComplexDbl>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexDbl> operator<=(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> operator<=(const Vec256<StdComplexDbl>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexDbl> operator>(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> operator>(const Vec256<StdComplexDbl>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexDbl> operator>=(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> operator>=(const Vec256<StdComplexDbl>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
 
-  Vec256<ComplexDbl> eq(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> eq(const Vec256<StdComplexDbl>& other) const {
     auto ret = (*this == other);
     return ret & vd_one;
   }
-  Vec256<ComplexDbl> ne(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> ne(const Vec256<StdComplexDbl>& other) const {
     auto ret = (*this != other);
     return ret & vd_one;
   }
 
-  Vec256<ComplexDbl> lt(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> lt(const Vec256<StdComplexDbl>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexDbl> le(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> le(const Vec256<StdComplexDbl>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexDbl> gt(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> gt(const Vec256<StdComplexDbl>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
-  Vec256<ComplexDbl> ge(const Vec256<ComplexDbl>& other) const {
+  Vec256<StdComplexDbl> ge(const Vec256<StdComplexDbl>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
 
-  DEFINE_MEMBER_OP(operator==, ComplexDbl, vec_cmpeq)
-  DEFINE_MEMBER_OP(operator!=, ComplexDbl, vec_cmpne)
+  DEFINE_MEMBER_OP(operator==, StdComplexDbl, vec_cmpeq)
+  DEFINE_MEMBER_OP(operator!=, StdComplexDbl, vec_cmpne)
 
-  DEFINE_MEMBER_OP(operator+, ComplexDbl, vec_add)
-  DEFINE_MEMBER_OP(operator-, ComplexDbl, vec_sub)
-  DEFINE_MEMBER_OP(operator&, ComplexDbl, vec_and)
-  DEFINE_MEMBER_OP(operator|, ComplexDbl, vec_or)
-  DEFINE_MEMBER_OP(operator^, ComplexDbl, vec_xor)
+  DEFINE_MEMBER_OP(operator+, StdComplexDbl, vec_add)
+  DEFINE_MEMBER_OP(operator-, StdComplexDbl, vec_sub)
+  DEFINE_MEMBER_OP(operator&, StdComplexDbl, vec_and)
+  DEFINE_MEMBER_OP(operator|, StdComplexDbl, vec_or)
+  DEFINE_MEMBER_OP(operator^, StdComplexDbl, vec_xor)
   // elelemtwise helpers
-  DEFINE_MEMBER_OP(elwise_mult, ComplexDbl, vec_mul)
-  DEFINE_MEMBER_OP(elwise_div, ComplexDbl, vec_div)
-  DEFINE_MEMBER_OP(elwise_gt, ComplexDbl, vec_cmpgt)
-  DEFINE_MEMBER_OP(elwise_ge, ComplexDbl, vec_cmpge)
-  DEFINE_MEMBER_OP(elwise_lt, ComplexDbl, vec_cmplt)
-  DEFINE_MEMBER_OP(elwise_le, ComplexDbl, vec_cmple)
+  DEFINE_MEMBER_OP(elwise_mult, StdComplexDbl, vec_mul)
+  DEFINE_MEMBER_OP(elwise_div, StdComplexDbl, vec_div)
+  DEFINE_MEMBER_OP(elwise_gt, StdComplexDbl, vec_cmpgt)
+  DEFINE_MEMBER_OP(elwise_ge, StdComplexDbl, vec_cmpge)
+  DEFINE_MEMBER_OP(elwise_lt, StdComplexDbl, vec_cmplt)
+  DEFINE_MEMBER_OP(elwise_le, StdComplexDbl, vec_cmple)
 };
 
 template <>
-Vec256<ComplexDbl> inline maximum(const Vec256<ComplexDbl>& a,
-                                  const Vec256<ComplexDbl>& b) {
+Vec256<StdComplexDbl> inline maximum(const Vec256<StdComplexDbl>& a,
+                                  const Vec256<StdComplexDbl>& b) {
   auto abs_a = a.abs_2_();
   auto abs_b = b.abs_2_();
   // auto mask = _mm256_cmp_ps(abs_a, abs_b, _CMP_LT_OQ);
   // auto max = _mm256_blendv_ps(a, b, mask);
   auto mask = abs_a.elwise_lt(abs_b);
-  auto max = Vec256<ComplexDbl>::elwise_blendv(a, b, mask);
+  auto max = Vec256<StdComplexDbl>::elwise_blendv(a, b, mask);
 
   return max;
   // Exploit the fact that all-ones is a NaN.
@@ -474,14 +474,14 @@ Vec256<ComplexDbl> inline maximum(const Vec256<ComplexDbl>& a,
 }
 
 template <>
-Vec256<ComplexDbl> inline minimum(const Vec256<ComplexDbl>& a,
-                                  const Vec256<ComplexDbl>& b) {
+Vec256<StdComplexDbl> inline minimum(const Vec256<StdComplexDbl>& a,
+                                  const Vec256<StdComplexDbl>& b) {
   auto abs_a = a.abs_2_();
   auto abs_b = b.abs_2_();
   // auto mask = _mm256_cmp_ps(abs_a, abs_b, _CMP_GT_OQ);
   // auto min = _mm256_blendv_ps(a, b, mask);
   auto mask = abs_a.elwise_gt(abs_b);
-  auto min = Vec256<ComplexDbl>::elwise_blendv(a, b, mask);
+  auto min = Vec256<StdComplexDbl>::elwise_blendv(a, b, mask);
   return min;
   // Exploit the fact that all-ones is a NaN.
   // auto isnan = _mm256_cmp_ps(abs_a, abs_b, _CMP_UNORD_Q);
@@ -489,9 +489,9 @@ Vec256<ComplexDbl> inline minimum(const Vec256<ComplexDbl>& a,
 }
 
 template <>
-Vec256<ComplexDbl> inline clamp(const Vec256<ComplexDbl>& a,
-                                const Vec256<ComplexDbl>& min,
-                                const Vec256<ComplexDbl>& max) {
+Vec256<StdComplexDbl> inline clamp(const Vec256<StdComplexDbl>& a,
+                                const Vec256<StdComplexDbl>& min,
+                                const Vec256<StdComplexDbl>& max) {
   auto abs_a = a.abs_2_();
   auto abs_min = min.abs_2_();
   // auto max_mask = _mm256_cmp_ps(abs_a, abs_min, _CMP_LT_OQ);
@@ -500,30 +500,30 @@ Vec256<ComplexDbl> inline clamp(const Vec256<ComplexDbl>& a,
   // auto min_mask = _mm256_cmp_ps(abs_a, abs_max, _CMP_GT_OQ);
   auto min_mask = abs_a.elwise_lt(abs_max);
   // return _mm256_blendv_ps(_mm256_blendv_ps(a, min, max_mask), max, min_mask);
-  auto f = Vec256<ComplexDbl>::elwise_blendv(a, min, max_mask);
-  return Vec256<ComplexDbl>::elwise_blendv(f, max, min_mask);
+  auto f = Vec256<StdComplexDbl>::elwise_blendv(a, min, max_mask);
+  return Vec256<StdComplexDbl>::elwise_blendv(f, max, min_mask);
 }
 
 template <>
-Vec256<ComplexDbl> inline clamp_min(const Vec256<ComplexDbl>& a,
-                                    const Vec256<ComplexDbl>& min) {
+Vec256<StdComplexDbl> inline clamp_min(const Vec256<StdComplexDbl>& a,
+                                    const Vec256<StdComplexDbl>& min) {
   auto abs_a = a.abs_2_();
   auto abs_min = min.abs_2_();
   // auto max_mask = _mm256_cmp_ps(abs_a, abs_min, _CMP_LT_OQ);
   // return _mm256_blendv_ps(a, min, max_mask);
   auto max_mask = abs_a.elwise_lt(abs_min);
-  return Vec256<ComplexDbl>::elwise_blendv(a, min, max_mask);
+  return Vec256<StdComplexDbl>::elwise_blendv(a, min, max_mask);
 }
 
 template <>
-Vec256<ComplexDbl> inline clamp_max(const Vec256<ComplexDbl>& a,
-                                    const Vec256<ComplexDbl>& max) {
+Vec256<StdComplexDbl> inline clamp_max(const Vec256<StdComplexDbl>& a,
+                                    const Vec256<StdComplexDbl>& max) {
   auto abs_a = a.abs_2_();
   auto abs_max = max.abs_2_();
   // auto min_mask = _mm256_cmp_ps(abs_a, abs_max, _CMP_GT_OQ);
   // return _mm256_blendv_ps(a, max, min_mask);
   auto min_mask = abs_a.elwise_lt(abs_max);
-  return Vec256<ComplexDbl>::elwise_blendv(a, max, min_mask);
+  return Vec256<StdComplexDbl>::elwise_blendv(a, max, min_mask);
 }
 
 }  // namespace
