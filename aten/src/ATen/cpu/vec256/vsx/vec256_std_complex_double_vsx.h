@@ -49,28 +49,28 @@ class Vec256<StdComplexDbl> {
   inline __inline_attrs const vec_internal_type& vec1() const { return _vec1; }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 0, Vec256<StdComplexDbl>>
+  static std::enable_if_t<blendChoiceComplexDbl(mask) == 0, Vec256<StdComplexDbl>>
       __inline_attrs blend(const Vec256<StdComplexDbl>& a,
                            const Vec256<StdComplexDbl>& b) {
     return a;
   }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 1, Vec256<StdComplexDbl>>
+  static std::enable_if_t<blendChoiceComplexDbl(mask) == 1, Vec256<StdComplexDbl>>
       __inline_attrs blend(const Vec256<StdComplexDbl>& a,
                            const Vec256<StdComplexDbl>& b) {
     return b;
   }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 2, Vec256<StdComplexDbl>>
+  static std::enable_if_t<blendChoiceComplexDbl(mask) == 2, Vec256<StdComplexDbl>>
       __inline_attrs blend(const Vec256<StdComplexDbl>& a,
                            const Vec256<StdComplexDbl>& b) {
     return {b._vec0, a._vec1};
   }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 3, Vec256<StdComplexDbl>>
+  static std::enable_if_t<blendChoiceComplexDbl(mask) == 3, Vec256<StdComplexDbl>>
       __inline_attrs blend(const Vec256<StdComplexDbl>& a,
                            const Vec256<StdComplexDbl>& b) {
     return {a._vec0, b._vec1};
