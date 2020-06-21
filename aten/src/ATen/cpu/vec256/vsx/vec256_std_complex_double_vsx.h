@@ -1,4 +1,5 @@
 #pragma once
+#include <c10/util/complex_type.h>
 #include <ATen/cpu/vec256/intrinsics.h>
 #include <ATen/cpu/vec256/vec256_base.h>
 #include <ATen/cpu/vec256/vsx/vsx_helpers.h>
@@ -49,36 +50,35 @@ class Vec256<StdComplexDbl> {
   inline __inline_attrs const vec_internal_type& vec1() const { return _vec1; }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceComplexDbl(mask) == 0, Vec256<StdComplexDbl>>
+  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 0, Vec256<StdComplexDbl>>
       __inline_attrs blend(const Vec256<StdComplexDbl>& a,
                            const Vec256<StdComplexDbl>& b) {
     return a;
   }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceComplexDbl(mask) == 1, Vec256<StdComplexDbl>>
+  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 1, Vec256<StdComplexDbl>>
       __inline_attrs blend(const Vec256<StdComplexDbl>& a,
                            const Vec256<StdComplexDbl>& b) {
     return b;
   }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceComplexDbl(mask) == 2, Vec256<StdComplexDbl>>
+  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 2, Vec256<StdComplexDbl>>
       __inline_attrs blend(const Vec256<StdComplexDbl>& a,
                            const Vec256<StdComplexDbl>& b) {
     return {b._vec0, a._vec1};
   }
 
   template <int64_t mask>
-  static std::enable_if_t<blendChoiceComplexDbl(mask) == 3, Vec256<StdComplexDbl>>
+  static std::enable_if_t<blendChoiceStdComplexDbl(mask) == 3, Vec256<StdComplexDbl>>
       __inline_attrs blend(const Vec256<StdComplexDbl>& a,
                            const Vec256<StdComplexDbl>& b) {
     return {a._vec0, b._vec1};
   }
 
   template <int64_t mask>
-      static Vec256 <
-      StdComplexDbl __inline_attrs el_blend(const Vec256<StdComplexDbl>& a,
+      static Vec256<StdComplexDbl>__inline_attrs el_blend(const Vec256<StdComplexDbl>& a,
                                          const Vec256<StdComplexDbl>& b) {
     const __vllb mask_1st = VsxDblMask1(mask);
     const __vllb mask_2nd = VsxDblMask2(mask);
@@ -97,7 +97,7 @@ class Vec256<StdComplexDbl> {
   }
 
   static Vec256<StdComplexDbl> __inline_attrs
-  el_blendv(const Vec256<StdComplexDbl>& a, const Vec256<StdComplexDbl>& b,
+  elwise_blendv(const Vec256<StdComplexDbl>& a, const Vec256<StdComplexDbl>& b,
             const Vec256<StdComplexDbl>& mask) {
     return {vec_sel(a._vec0, b._vec0, mask._vecb0),
             vec_sel(a._vec1, b._vec1, mask._vecb1)};
@@ -163,8 +163,8 @@ class Vec256<StdComplexDbl> {
   }
 
   Vec256<StdComplexDbl> get_evens() const {
-    __vd v0 = vec_splats(_vec0, _vec0, 0);
-    __vd v1 = vec_splats(_vec1, _vec1, 0);
+    __vd v0 = vec_splat(_vec0, 0);
+    __vd v1 = vec_splat(_vec1, 0);
     return {v0, v1};
   }
 
@@ -182,12 +182,12 @@ class Vec256<StdComplexDbl> {
     return a;
   }
 
-  Vec256<std::complex<float>> abs_() const {
+  Vec256<StdComplexDbl> abs_() const {
     auto ret = abs_2_();
     return ret.elwise_sqrt();
   }
 
-  Vec256<std::complex<float>> abs() const { return abs_() & real_mask; }
+  Vec256<StdComplexDbl> abs() const { return abs_() & vd_real_mask; }
 
   Vec256<StdComplexDbl> angle_() const {
     // angle = atan2(b/a)
@@ -223,11 +223,11 @@ class Vec256<StdComplexDbl> {
   Vec256<StdComplexDbl> log2() const {
     // log2eB_inv
     auto ret = log();
-    return ret.elwise_mult(log2e_inv);
+    return ret.elwise_mult(vd_log2e_inv);
   }
   Vec256<StdComplexDbl> log10() const {
     auto ret = log();
-    return ret.elwise_mult(log10e_inv);
+    return ret.elwise_mult(vd_log10e_inv);
   }
 
 
@@ -290,7 +290,7 @@ class Vec256<StdComplexDbl> {
     return {vec_trunc(_vec0), vec_trunc(_vec1)};
   }
 
-  Vec256<std::complex<float>> elwise_sqrt() const {
+  Vec256<StdComplexDbl> elwise_sqrt() const {
     return {vec_sqrt(_vec0), vec_sqrt(_vec1)};
   }
 
@@ -353,7 +353,7 @@ class Vec256<StdComplexDbl> {
     //(a + bi)  * (c + di) = (ac - bd) + (ad + bc)i
     auto ac_bd = elwise_mult(b);
     auto d_c = b.el_swapped();
-    d_c = d_c ^ isign_mask;
+    d_c = d_c ^ vd_isign_mask;
     auto ad_bc = elwise_mult(d_c);
     auto ret = horizontal_sub(ac_bd, ad_bc);
     return ret;
@@ -365,7 +365,7 @@ class Vec256<StdComplexDbl> {
     // im = (bc - ad)/abs_2()
     auto ac_bd = elwise_mult(b);
     auto d_c = b.el_swapped();
-    d_c = d_c ^ rsign_mask;
+    d_c = d_c ^ vd_rsign_mask;
     auto ad_bc = elwise_mult(d_c);
     auto abs_b = b.abs_2_();
     auto re_im = horizontal_add(ac_bd, ad_bc);
