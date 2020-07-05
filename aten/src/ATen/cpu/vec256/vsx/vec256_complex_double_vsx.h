@@ -274,7 +274,7 @@ namespace at {
                 Vec256<ComplexDbl> cosh() const { return map(std::cosh); }
 
                 Vec256<ComplexDbl> tan() const { return map(std::tan); }
-
+                Vec256<ComplexDbl> tanh() const { return map(std::tanh); }
                 Vec256<ComplexDbl> ceil() const { return { vec_ceil(_vec0), vec_ceil(_vec1) }; }
                 Vec256<ComplexDbl> floor() const {
                     return { vec_floor(_vec0), vec_floor(_vec1) };
