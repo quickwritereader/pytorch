@@ -17,6 +17,9 @@ static CPUCapability compute_cpu_capability() {
     if (strcmp(envar, "avx") == 0) {
       return CPUCapability::AVX;
     }
+    if (strcmp(envar, "vsx") == 0) {
+      return CPUCapability::VSX;
+    }
     if (strcmp(envar, "default") == 0) {
       return CPUCapability::DEFAULT;
     }
@@ -33,7 +36,11 @@ static CPUCapability compute_cpu_capability() {
     }
   }
 #endif
+#ifdef HAVE_VSX_CPU_DEFINITION
+  return CPUCapability::VSX;
+#else
   return CPUCapability::DEFAULT;
+#endif
 }
 
 CPUCapability get_cpu_capability() {

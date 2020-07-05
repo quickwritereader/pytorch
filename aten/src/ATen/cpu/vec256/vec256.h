@@ -4,8 +4,8 @@
 // See Note [Do not compile initializers with AVX]
 
 #include <ATen/cpu/vec256/intrinsics.h>
-
 #include <ATen/cpu/vec256/vec256_base.h>
+#if !defined(__VSX__)
 #include <ATen/cpu/vec256/vec256_float.h>
 #include <ATen/cpu/vec256/vec256_bfloat16.h>
 #include <ATen/cpu/vec256/vec256_double.h>
@@ -13,7 +13,9 @@
 #include <ATen/cpu/vec256/vec256_qint.h>
 #include <ATen/cpu/vec256/vec256_complex_float.h>
 #include <ATen/cpu/vec256/vec256_complex_double.h>
-
+#else
+#include <ATen/cpu/vec256/vsx/vec256_common_vsx.h>
+#endif
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
