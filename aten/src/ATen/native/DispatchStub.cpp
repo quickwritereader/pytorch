@@ -11,16 +11,20 @@ namespace at { namespace native {
 static CPUCapability compute_cpu_capability() {
   auto envar = std::getenv("ATEN_CPU_CAPABILITY");
   if (envar) {
+#ifdef HAVE_VSX_CPU_DEFINITION
+    if (strcmp(envar, "vsx") == 0) {
+      return CPUCapability::VSX;
+    }
+#else
     if (strcmp(envar, "avx2") == 0) {
       return CPUCapability::AVX2;
     }
     if (strcmp(envar, "avx") == 0) {
       return CPUCapability::AVX;
     }
-    if (strcmp(envar, "vsx") == 0) {
-      return CPUCapability::VSX;
-    }
+#endif     
     if (strcmp(envar, "default") == 0) {
+      TORCH_WARN("--default--");
       return CPUCapability::DEFAULT;
     }
     TORCH_WARN("ignoring invalid value for ATEN_CPU_CAPABILITY: ", envar);

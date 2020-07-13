@@ -5,7 +5,7 @@
 #include <ATen/native/TensorIterator.h>
 #include <ATen/native/Pow.h>
 #include <ATen/native/cpu/Loops.h>
-
+#include <iostream>
 namespace at { namespace native {
 
 namespace {
@@ -19,7 +19,11 @@ void pow_tensor_tensor_kernel(TensorIterator& iter) {
           return std::pow(base, exp);
         },
         [&](Vec base, Vec exp) -> Vec {
-          return base.pow(exp);
+          auto ret=base.pow(exp);;
+          //return base.pow(exp); 
+            std::cout<<base<<" "<<exp<<std::endl;
+            std::cout<<"pow: "<<ret<<std::endl; 
+          return ret;
         }
       );
     });

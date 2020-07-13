@@ -568,28 +568,30 @@ namespace at {
                     return sqrt().reciprocal();
                 }
 
-                Vec256<float> __inline_attrs pow(const Vec256<float>& pow_exp) const {
+                Vec256<float> __inline_attrs pow(const Vec256<float>& exp) const { 
+                    std::cout<<"----"<<std::endl;
+                    exp.dump();
                     auto x = *this;
                     auto sign_bit = (*this) & sign_mask;
                     // |b|
-                    auto pow_exp_abs = pow_exp.abs();
-                    auto pow_exp_trunc = pow_exp.trunc();
+                    auto exp_abs = exp.abs();
+                    auto exp_trunc = exp.trunc();
                     Vec256<float> odd_mask;
-                    odd_mask._vecb0 = (vec_signed(pow_exp._vec0) & vi_1) != vi_0;
-                    odd_mask._vecb1 = (vec_signed(pow_exp._vec1) & vi_1) != vi_0;
+                    odd_mask._vecb0 = (vec_signed(exp._vec0) & vi_1) != vi_0;
+                    odd_mask._vecb1 = (vec_signed(exp._vec1) & vi_1) != vi_0;
                     // using ln fuction
-                    auto temp = (abs().log() * pow_exp).exp();
+                    auto temp = (abs().log() * exp).exp();
 
                     // is odd or even check from Sleef
-                    auto is_int = (pow_exp == pow_exp_trunc) | (pow_exp_abs >= vcheck);
-                    auto is_odd = odd_mask & is_int & (pow_exp_abs < vcheck);
+                    auto is_int = (exp == exp_trunc) | (exp_abs >= vcheck);
+                    auto is_odd = odd_mask & is_int & (exp_abs < vcheck);
                     // if even then then pow result should be absolute
                     auto temp_sign = temp | sign_bit; // copy_sign
                     auto out = blendv(temp, temp_sign, is_odd);
                     // x<0 and y != N, then NAN
-                    auto out1 = blendv(out, v_nan, ((pow_exp.floor() != pow_exp) & (x < zero)));
+                    auto out1 = blendv(out, v_nan, ((exp.floor() != exp) & (x < zero)));
                     // y = 0 then 1
-                    return blendv(out1, one, (pow_exp_abs == zero));
+                    return blendv(out1, one, (exp_abs == zero));
                 }
 
                 Vec256<float> fmod(const Vec256<float>& q) const {

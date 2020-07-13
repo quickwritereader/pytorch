@@ -45,9 +45,12 @@ namespace at { namespace native {
 
 enum class CPUCapability {
   DEFAULT = 0,
+#ifdef HAVE_VSX_CPU_DEFINITION
+  VSX = 1,
+#else
   AVX = 1,
   AVX2 = 2,
-  VSX = 3,
+#endif
   NUM_OPTIONS
 };
 

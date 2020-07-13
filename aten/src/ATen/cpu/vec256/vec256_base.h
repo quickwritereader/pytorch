@@ -19,7 +19,7 @@
 #include <cmath>
 #include <type_traits>
 #include <bitset>
-
+#include <iostream>
 #include <ATen/cpu/vec256/intrinsics.h>
 #include <ATen/Utils.h>
 #include <ATen/native/Copy.h>
@@ -417,6 +417,7 @@ public:
   }
   Vec256<T> pow(const Vec256<T> &exp) const {
     Vec256<T> ret;
+    std::cout<<"++++ "<<std::endl;
     for (int64_t i = 0; i < size(); i++) {
       ret[i] = std::pow(values[i], exp[i]);
     }

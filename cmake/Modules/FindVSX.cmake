@@ -1,25 +1,27 @@
 
 IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
-   #message("CHECK with LD_SHOW_AUXV=1 /bin/true")
+   message("<FindVSX>")
 
    EXEC_PROGRAM(LD_SHOW_AUXV=1 ARGS "/bin/true" OUTPUT_VARIABLE bintrue) 
    if(bintrue MATCHES "AT_PLATFORM:[ \\t\\n\\r]*([a-zA-Z0-9_]+)[ \\t\\n\\r]*")
     if(CMAKE_MATCH_COUNT GREATER 0)
 	 string(TOLOWER ${CMAKE_MATCH_1} platform)
 	 if(${platform} MATCHES "^power")
-         message("---power computer---${platform}")
+     message("POWER Platform: ${platform}")
 		 SET(POWER_COMP TRUE CACHE BOOL "power ")
 		 SET(CXX_VSX_FLAGS  "${CXX_VSX_FLAGS} -mcpu=${platform} -mtune=${platform}" )
 	 endif()
    endif()
    endif()
    if(POWER_COMP AND bintrue MATCHES "AT_HWCAP:.*(vsx).*")
-     message("VSX is supported by the system")
-	 SET(SYS_VSX_SUPPORTED TRUE CACHE BOOL "vsx checked with LD_SHOW_AUXV=1 /bin/true")
+     message("VSX availability: True")
+	   SET(SYS_VSX_SUPPORTED TRUE CACHE BOOL "vsx checked with LD_SHOW_AUXV=1 /bin/true")
+   else()
+     message("VSX availability: False")
    endif()
 
 
-   SET(VSX_CODE " #include <altivec.h> 
+  SET(VSX_CODE " #include <altivec.h> 
   int main()
   {
 	float __attribute__((aligned(16))) vptr_y[8]   = { 1.0f,2.f,3.f,4.f,4.f,3.f,2.f,1.f };
@@ -35,7 +37,9 @@ IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
   SET(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS_SAVE})
   
   if(CXX_VSX_FOUND)
-    message("****VSX FOUND ${CXX_VSX_FOUND}")
     SET(CXX_VSX_FLAGS  "${CXX_VSX_FLAGS} -mvsx" )
+  else()
+    message("Warning: VSX flag was not set.")  
   endif()
+  message("</FindVSX>")  
 endif()

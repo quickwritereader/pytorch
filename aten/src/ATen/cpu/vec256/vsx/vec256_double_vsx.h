@@ -184,7 +184,9 @@ class Vec256<double> {
   }
   const double& operator[](int idx) const = delete;
   double& operator[](int idx) = delete;
-
+  void dump() const {
+      std::cout << _vec0[0] << "," << _vec0[1] << "," << _vec1[0] << "," << _vec1[1] << std::endl;
+  }
   Vec256<double> map(double (*f)(double)) const {
     return {f(_vec0[0]), f(_vec0[1]), f(_vec1[0]), f(_vec1[1])};
   }
@@ -310,6 +312,8 @@ class Vec256<double> {
   }
 
   Vec256<double> __inline_attrs pow(const Vec256<double>& exp) const {
+                        std::cout<<"----"<<std::endl;
+                    exp.dump();
     return mapbi(std::pow, exp);
   }
   Vec256<double> __inline_attrs fmod(const Vec256<double>& q) const {
