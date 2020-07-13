@@ -276,10 +276,6 @@ bool nearlyEqual(T a, T b, T max_diff) {
 }
 
 
-template <typename T>
-T local_abs(T x) {
-    return x > 0 ? x : -x;
-}
 
 template <typename T>
 T reciprocal(T x) {
@@ -792,7 +788,7 @@ test_unary(
     Filter filter = {},bool checkRelativeErr=false, bool allow_specials = false, bool test_nan_inf = false, size_t trials = 0) {
     using UVT = UvalueType<T>;
     TestingCase<UVT> test_case;
-    if (std::is_floating_point<UVT>::value) {
+    if (!bitwise && std::is_floating_point<UVT>::value) {
         //for float types lets add manual ranges  
         UVT generalRelErr = (UVT)(1.e-5f);
 
@@ -1001,14 +997,15 @@ local_and(const T& val0, const T& val1) {
 template<typename T>
 std::enable_if_t<is_complex<T>(), T> 
 local_and(const T &val0, const T & val1) { 
-        UnitType<T> real1 =val0.real() ;
-        UnitType<T> imag1 =val0.imag() ;
-        UnitType<T> real2 = val1.real();
-        UnitType<T> imag2 = val1.imag();
-        using bit_rep = BitType<T>;
-        bit_rep real_ret = bit_cast<bit_rep>(real1) & bit_cast<bit_rep>(real2);
-        bit_rep imag_ret = bit_cast<bit_rep>(imag1) & bit_cast<bit_rep>(imag2);
-        return T(bit_cast<T> (real_ret), bit_cast<T> (imag_ret));
+    using UVT = UnitType<T> ;
+    using bit_rep = BitUvalueType<T>;
+    UVT real1 =val0.real() ;
+    UVT imag1 =val0.imag() ;
+    UVT real2 = val1.real();
+    UVT imag2 = val1.imag();
+    bit_rep real_ret = bit_cast<bit_rep>(real1) & bit_cast<bit_rep>(real2);
+    bit_rep imag_ret = bit_cast<bit_rep>(imag1) & bit_cast<bit_rep>(imag2);
+    return T(bit_cast<UVT> (real_ret), bit_cast<UVT>(imag_ret));
 }
 
 template<typename T>
@@ -1056,14 +1053,15 @@ local_or(const T& val0, const T& val1) {
 template<typename T>
 std::enable_if_t<is_complex<T>(), T>
 local_or(const T& val0, const T& val1) {
-    UnitType<T> real1 = val0.real();
-    UnitType<T> imag1 = val0.imag();
-    UnitType<T> real2 = val1.real();
-    UnitType<T> imag2 = val1.imag();
-    using bit_rep = BitType<T>;
+    using UVT = UnitType<T> ;
+    using bit_rep = BitUvalueType<T>;
+    UVT real1 =val0.real() ;
+    UVT imag1 =val0.imag() ;
+    UVT real2 = val1.real();
+    UVT imag2 = val1.imag();
     bit_rep real_ret = bit_cast<bit_rep>(real1) | bit_cast<bit_rep>(real2);
     bit_rep imag_ret = bit_cast<bit_rep>(imag1) | bit_cast<bit_rep>(imag2);
-    return T(bit_cast<T> (real_ret), bit_cast<T> (imag_ret));
+    return T(bit_cast<UVT> (real_ret), bit_cast<UVT> (imag_ret));
 }
 
 template<typename T>
@@ -1077,12 +1075,13 @@ local_xor(const T& val0, const T& val1) {
 template<typename T>
 std::enable_if_t<is_complex<T>(), T>
 local_xor(const T& val0, const T& val1) {
-    UnitType<T> real1 = val0.real();
-    UnitType<T> imag1 = val0.imag();
-    UnitType<T> real2 = val1.real();
-    UnitType<T> imag2 = val1.imag();
-    using bit_rep = BitType<T>;
+    using UVT = UnitType<T> ;
+    using bit_rep = BitUvalueType<T>;
+    UVT real1 =val0.real() ;
+    UVT imag1 =val0.imag() ;
+    UVT real2 = val1.real();
+    UVT imag2 = val1.imag();
     bit_rep real_ret = bit_cast<bit_rep>(real1) ^ bit_cast<bit_rep>(real2);
     bit_rep imag_ret = bit_cast<bit_rep>(imag1) ^ bit_cast<bit_rep>(imag2);
-    return T(bit_cast<T> (real_ret), bit_cast<T> (imag_ret));
+    return T(bit_cast<UVT> (real_ret), bit_cast<UVT> (imag_ret));
 }

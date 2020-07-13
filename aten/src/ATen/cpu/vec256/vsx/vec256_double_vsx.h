@@ -312,8 +312,6 @@ class Vec256<double> {
   }
 
   Vec256<double> __inline_attrs pow(const Vec256<double>& exp) const {
-                        std::cout<<"----"<<std::endl;
-                    exp.dump();
     return mapbi(std::pow, exp);
   }
   Vec256<double> __inline_attrs fmod(const Vec256<double>& q) const {

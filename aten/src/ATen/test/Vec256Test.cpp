@@ -1,4 +1,4 @@
-#include <Vec256Test.h>
+#include <ATen/test/Vec256Test.h>
 namespace {
 
 #if GTEST_HAS_TYPED_TEST
@@ -90,13 +90,13 @@ namespace {
 
     TYPED_TEST_CASE(Comparison, RealFloatIntTestedTypes);
 
-    TYPED_TEST_CASE(Bitwise, RealFloatIntTestedTypes);
+    TYPED_TEST_CASE(Bitwise, FloatIntTestedTypes);
 
     TYPED_TEST_CASE(MinMax, RealFloatIntTestedTypes);
 
     TYPED_TEST_CASE(Interleave, RealFloatIntTestedTypes);
 
-    TYPED_TEST_CASE(SignManipulation, RealFloatIntTestedTypes);
+    TYPED_TEST_CASE(SignManipulation, FloatIntTestedTypes);
 
     TYPED_TEST_CASE(Rounding, RealFloatTestedTypes);
 
@@ -170,7 +170,7 @@ namespace {
     TYPED_TEST(SignManipulation, Absolute) {
         using vec_type = TypeParam; 
         test_unary<vec_type>(
-            "absolute", RESOLVE_OVERLOAD(local_abs),
+            "absolute", RESOLVE_OVERLOAD(std::abs),
             [](vec_type v) { return v.abs(); }, false,
             RESOLVE_OVERLOAD(filter_int_minimum), true);
     }
@@ -554,7 +554,7 @@ namespace {
         using VT = ValueType<TypeParam>;
         test_binary<vec_type>(
             "bit_and",  local_and<VT>,
-            [](const vec_type& v0, const vec_type& v1) { return v0 & v1; });
+            [](const vec_type& v0, const vec_type& v1) { return v0 & v1; }, true);
     }
     
     TYPED_TEST(Bitwise, BitOr) {
@@ -562,7 +562,7 @@ namespace {
         using VT = ValueType<TypeParam>;
         test_binary<vec_type>(
             "bit_or", local_or<VT>,
-            [](const vec_type& v0, const vec_type& v1) { return v0 | v1; });
+            [](const vec_type& v0, const vec_type& v1) { return v0 | v1; }, true);
     }
 
     TYPED_TEST(Bitwise, BitXor) {
@@ -570,7 +570,7 @@ namespace {
         using VT = ValueType<TypeParam>;
         test_binary<vec_type>(
             "bit_xor", local_xor<VT>,
-            [](const vec_type& v0, const vec_type& v1) { return v0 ^ v1; });
+            [](const vec_type& v0, const vec_type& v1) { return v0 ^ v1; }, true);
     }
 
 
@@ -794,34 +794,6 @@ namespace {
     }
 
 
-    TEST(ComplexTests, TestComplexFloatAbs) {
-        //vcomplex a = { std::complex<float>(1,2),std::complex<float>(3,4) ,std::complex<float>(5,6) ,std::complex<float>(6,7) };
-        float aa[] = { 0,1.f,2.f,3.f,4.f,5.f,6.f,7.f };
-        float exp[] = { 1.f,1.f,13.f,13.f,41.f,41.f,85.f,85.f };
-        float exp1[] = { 1, 1, std::sqrt(13.f),std::sqrt(13.f), std::sqrt(41.f), std::sqrt(41.f), std::sqrt(85.f),std::sqrt(85.f) };
-        float exp2[] = { 1, 0, std::sqrt(13.f), 0, std::sqrt(41.f), 0, std::sqrt(85.f),0 };
-        auto a = vcomplex::loadu(aa);
-#if defined(__VSX__)
-        auto actual = a.abs_2_();
-        auto actual1 = a.abs_();
-#endif
-        auto actual2 = a.abs();
-#if defined(__VSX__)
-        std::cout << actual << std::endl;
-        std::cout << actual1 << std::endl;
-#endif
-        std::cout << actual2 << std::endl;
-#if defined(__VSX__)
-        auto expected = vcomplex::loadu(exp);
-        auto expected1 = vcomplex::loadu(exp1);
-#endif
-        auto expected2 = vcomplex::loadu(exp2);
-#if defined(__VSX__)
-        AssertVec256(expected, actual);
-        AssertVec256(expected1, actual1);
-#endif
-        AssertVec256(expected2, actual2);
-    }
 
 
     TEST(ComplexTests, TestComplexFloatImagRealConj) {

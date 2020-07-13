@@ -569,8 +569,6 @@ namespace at {
                 }
 
                 Vec256<float> __inline_attrs pow(const Vec256<float>& exp) const { 
-                    std::cout<<"----"<<std::endl;
-                    exp.dump();
                     auto x = *this;
                     auto sign_bit = (*this) & sign_mask;
                     // |b|
