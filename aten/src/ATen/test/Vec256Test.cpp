@@ -172,7 +172,7 @@ namespace {
         test_unary<vec_type>(
             "absolute", RESOLVE_OVERLOAD(std::abs),
             [](vec_type v) { return v.abs(); }, false,
-            RESOLVE_OVERLOAD(filter_int_minimum), true);
+            RESOLVE_OVERLOAD(filter_int_minimum), false);
     }
 
     TYPED_TEST(SignManipulation, Negate) {
@@ -181,7 +181,7 @@ namespace {
         test_unary<vec_type>(
             "negate", std::negate<ValueType<vec_type>>(),
             [](vec_type v) { return v.neg(); }, false,
-            RESOLVE_OVERLOAD(filter_int_minimum), true);
+            RESOLVE_OVERLOAD(filter_int_minimum), false);
     }
 
 
