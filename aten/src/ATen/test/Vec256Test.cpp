@@ -297,16 +297,26 @@ namespace {
 
     TYPED_TEST(Hyperbolic, Sinh) {
         using vec_type = TypeParam;
+        using UVT = UvalueType<TypeParam>;
+        auto test_case =
+            TestingCase<UVT>::getBuilder()
+            .addDomain(CheckWithinDomains<UVT>{ { {-88, 88}}, true, 1.e-5f})
+            .setTrialCount(65536);
         test_unary<vec_type>(
             "sinh", RESOLVE_OVERLOAD(std::sinh),
-            [](vec_type v) { return v.sinh(); });
+            [](vec_type v) { return v.sinh(); }, test_case);
     }
 
     TYPED_TEST(Hyperbolic, Cosh) {
         using vec_type = TypeParam;
+        using UVT = UvalueType<TypeParam>;
+        auto test_case =
+            TestingCase<UVT>::getBuilder()
+            .addDomain(CheckWithinDomains<UVT>{ { {-88, 88}}, true, 1.e-5f}) 
+            .setTrialCount(65536);
         test_unary<vec_type>(
             "cosh", RESOLVE_OVERLOAD(std::cosh),
-            [](vec_type v) { return v.cosh(); });
+            [](vec_type v) { return v.cosh(); }, test_case);
     }
 
     TYPED_TEST(InverseTrigonometric, Asin) {
@@ -340,7 +350,7 @@ namespace {
             [](const vec_type& v) { return v.log(); });
     }
 
-    TYPED_TEST(Logarithm, Log2) {
+    TYPED_TEST(LogarithmReals, Log2) {
         using vec_type = TypeParam;
         test_unary<vec_type>(
             "log2", RESOLVE_OVERLOAD(local_log2),

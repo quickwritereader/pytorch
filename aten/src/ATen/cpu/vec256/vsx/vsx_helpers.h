@@ -231,7 +231,8 @@ const __vf half = vec_splats(0.5f);
 const __vf one = vec_splats(1.f);
 const __vf two = vec_splats(2.0f);
 const __vf _4div_pi = vec_splats(1.27323954473516f);
-const __vf v_inf = (__vf)vec_splats(0x7f800000u);
+const __vf v_inf = (__vf)vec_splats(0x7f800000u); 
+const __vf v_minus_inf = __vf{ 0xff800000u, 0xff800000u, 0xff800000u, 0xff800000u };
 const __vf v_nan = (__vf)vec_splats(0x7fffffff);
 const __vf log10e_inv = vec_splats(0.43429448190325176f);
 const __vf log2e_inv = vec_splats(1.4426950408889634f);
@@ -287,6 +288,9 @@ const __vf imag_half = __vf{0.f, 0.5f, 0.f, 0.5f};
 const __vf sqrt2_2 = __vf{0.70710676908493042f, 0.70710676908493042,
                           0.70710676908493042, 0.70710676908493042};
 const __vf pi_2 = __vf{M_PI / 2, 0.0, M_PI / 2, 0.0};
+
+
+const __vf vf_89 = __vf{89.f, 89.f, 89.f, 89.f};
 
 const __vd vd_one = vec_splats(1.0);
 const __vd vd_zero = vec_splats(0.0);

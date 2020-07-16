@@ -226,6 +226,21 @@ namespace at {
                     return ret;
                 }
 
+                Vec256<float> _nor() const{
+                    return { vec_nor(_vec0, _vec0), vec_nor(_vec1, _vec1) };
+                }
+
+                Vec256<float> _isnan() const {
+                    auto x = *this;
+                    auto ret = (x == x);
+                    return ret._nor();
+                }
+
+                Vec256<float> _isinf() const{
+                    auto x = *this;
+                    return (x == v_inf) | (x == v_minus_inf);
+                }                
+
                 int zero_mask() const {
                     // returns an integer mask where all zero elements are translated to 1-bit
                     // and others are translated to 0-bit
@@ -438,8 +453,16 @@ namespace at {
                 }
                 Vec256<float> __inline_attrs cosh() const {
                     // cosh = 1/2 * (e^x + e^-x)
-                    auto e_x = abs().exp();
-                    return (e_x + Vec256<float>(one) / e_x) * half;
+                    auto x = abs();
+                    auto e_x = x.exp();
+                    auto ret = (e_x + Vec256<float>(one) / e_x) * half;
+                    //inf and nan checks
+#if 0
+                    ret = blendv(ret, v_inf, x >= vf_89);
+                    ret = blendv(ret, v_inf, ret._isnan());
+                    ret = blendv(ret, v_nan, this->_isnan());
+#endif
+                    return ret; 
                 }
                 Vec256<float> __inline_attrs floor() const {
                     return { vec_floor(_vec0), vec_floor(_vec1) };
