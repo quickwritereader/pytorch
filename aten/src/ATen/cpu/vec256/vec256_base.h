@@ -19,7 +19,7 @@
 #include <cmath>
 #include <type_traits>
 #include <bitset>
-
+#include <iostream>
 #include <ATen/cpu/vec256/intrinsics.h>
 #include <ATen/Utils.h>
 #include <ATen/native/Copy.h>
