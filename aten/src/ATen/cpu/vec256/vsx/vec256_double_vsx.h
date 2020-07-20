@@ -276,8 +276,8 @@ class Vec256<double> {
   Vec256<double> __inline_attrs neg() const {
     return {vec_neg(_vec0), vec_neg(_vec1)};
   }
-  Vec256<double> __inline_attrs round() const {
-    return {vec_round(_vec0), vec_round(_vec1)};
+  Vec256<double> __inline_attrs round() const { 
+    return {vec_rint(_vec0), vec_rint(_vec1)};
   }
   Vec256<double> __inline_attrs sin() const {
     return map(std::sin);

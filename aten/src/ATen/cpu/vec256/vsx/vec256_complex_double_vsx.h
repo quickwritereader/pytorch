@@ -284,7 +284,7 @@ namespace at {
                     return z - *this;
                 }
                 Vec256<ComplexDbl> round() const {
-                    return { vec_round(_vec0), vec_round(_vec1) };
+                    return {vec_rint(_vec0), vec_rint(_vec1)};
                 }
 
                 Vec256<ComplexDbl> trunc() const {
