@@ -72,6 +72,9 @@ namespace {
     template <typename T>
     class ComplexTests : public ::testing::Test {};
 
+    template <typename T>
+    class QuantizationTests : public ::testing::Test {};
+
     using RealFloatTestedTypes = ::testing::Types<vfloat, vdouble>;
     using FloatTestedTypes = ::testing::Types<vfloat, vdouble, vcomplex, vcomplexDbl>;
     using ALLTestedTypes = ::testing::Types<vfloat, vdouble, vcomplex, vlong, vint, vshort,
@@ -119,12 +122,16 @@ namespace {
     TYPED_TEST_CASE(LGamma, RealFloatTestedTypes);
 
     TYPED_TEST_CASE(Logarithm, FloatTestedTypes);
+
     TYPED_TEST_CASE(LogarithmReals, RealFloatTestedTypes);
 
     TYPED_TEST_CASE(Pow, RealFloatTestedTypes);
 
     TYPED_TEST_CASE(BitwiseFloatsAdditional, RealFloatTestedTypes);
+
     TYPED_TEST_CASE(BitwiseFloatsAdditional2, FloatTestedTypes);
+
+    TYPED_TEST_CASE(QuantizationTests, QuantTestedTypes);
 
     TYPED_TEST(Memory, UnAlignedLoadStore) {
         using vec_type = TypeParam;
@@ -836,6 +843,156 @@ namespace {
         AssertVec256(expected1, actual1); 
         AssertVec256(expected3, actual3);
         AssertVec256(expected4, actual4);
+    }
+
+
+    TYPED_TEST(QuantizationTests, Quantize) {
+        using vec_type = TypeParam;
+        using underlying = ValueType<vec_type>; 
+        constexpr int trials = 4000;
+        constexpr int min_val = std::numeric_limits<underlying>::min();
+        constexpr int max_val = std::numeric_limits<underlying>::max();
+        constexpr int el_count = vfloat::size();
+        CACHE_ALIGN float unit_float_vec[el_count];
+        CACHE_ALIGN underlying expected_qint_vals[vec_type::size()];
+        typename vec_type::float_vec_return_type  float_ret;
+        for (int i = 0; i < trials; i++) {
+            //zero point 
+            ValueGen<int> generator_zp(min_val, max_val);
+            //scale
+            ValueGen<float> generator_sc(1.f, 15.f);
+            //value
+            ValueGen<float> gen(min_val * 2.f, max_val * 2.f);
+
+            float scale = generator_sc.get();
+            float inv_scale = 1.0f / static_cast<float>(scale); 
+            auto zero_point_val = generator_zp.get();
+            int index = 0;
+            for (int j = 0; j < vec_type::float_num_vecs(); j++) {
+                //generate vals
+                for (auto& v : unit_float_vec) {
+                    v = gen.get();
+                    expected_qint_vals[index] = quantize_val<underlying>(scale, zero_point_val, v);
+                    index++;
+                }
+                float_ret[j] = vfloat::loadu(unit_float_vec); 
+            }
+            auto expected = vec_type::loadu(expected_qint_vals);
+            auto actual = vec_type::quantize(float_ret, scale, zero_point_val, inv_scale);
+
+            AssertVec256(expected, actual);
+            if (::testing::Test::HasFailure()) {
+
+                std::cout << "quantization: {\nvec_exp:";
+                expected.dump();
+                std::cout << "vec_act:";
+                actual.dump();
+                std::cout << "}" << std::endl;
+                return;
+            }
+        } //trials;
+
+    }
+
+
+    TYPED_TEST(QuantizationTests, DeQuantize) {
+        using vec_type = TypeParam;
+        using underlying = ValueType<vec_type>;
+        constexpr bool is_large = sizeof(underlying)>1;
+        constexpr int trials = is_large ? 1000 : std::numeric_limits<underlying>::max()/2;
+        constexpr int min_val = is_large ?-1190 : std::numeric_limits<underlying>::min();
+        constexpr int max_val = is_large ? 1199 : std::numeric_limits<underlying>::max();
+        CACHE_ALIGN float unit_exp_vals[vfloat::size()];
+        CACHE_ALIGN underlying qint_vals[vec_type::size()];
+        typename vec_type::float_vec_return_type  expected_float_ret;
+        for (int i = 0; i < trials; i++) {
+             
+            ValueGen<int> generator(min_val, max_val);
+            //scale
+            ValueGen<float> generator_sc(1.f, 15.f); 
+            float scale = generator_sc.get(); 
+            int32_t zero_point_val = generator.get();
+            float scale_zp_premul = -(scale * zero_point_val);
+            vfloat vf_scale = vfloat{ scale };
+            vfloat vf_zp = vfloat{ zero_point_val };
+            vfloat vf_scale_zp = vfloat{ scale_zp_premul };
+            //generate vals
+            for (auto& x : qint_vals) {
+                x = generator.get();
+            } 
+            //get expected
+            int index = 0;
+            for (int j = 0; j < vec_type::float_num_vecs(); j++) { 
+                for (auto& v : unit_exp_vals) {
+                    v = dequantize_val(scale, zero_point_val, qint_vals[index]);
+                    index++;
+                }
+                vfloat vf = vfloat::loadu(unit_exp_vals);
+                expected_float_ret[j] = vf;
+            }
+
+            auto qint_vec = vec_type::loadu(qint_vals);
+            auto actual_float_ret = qint_vec.dequantize(vf_scale, vf_zp, vf_scale_zp);
+
+            for (int j = 0; j < vec_type::float_num_vecs(); j++) {
+                const auto& expected = expected_float_ret[j];
+                const auto& actual = actual_float_ret[j];
+                AssertVec256(expected, actual );
+                if (::testing::Test::HasFailure()) { 
+                    std::cout << "deQuantization: {\nvec_exp:"<<expected<< "\nvec_act:"; 
+                    std::cout << actual<<"\n}" << std::endl;
+                    return;
+                }
+            }
+        } //trials;
+
+    }
+ 
+    TYPED_TEST(QuantizationTests, ReQuantizeFromInt) {
+        using vec_type = TypeParam;
+        using underlying = ValueType<vec_type>;
+        constexpr int trials = 4000;
+        constexpr int min_val = std::numeric_limits<underlying>::min();
+        constexpr int max_val = std::numeric_limits<underlying>::max();
+        constexpr int el_count = vint::size();
+        CACHE_ALIGN c10::qint32 unit_int_vec[el_count];
+        CACHE_ALIGN underlying expected_qint_vals[vec_type::size()];
+        typename vec_type::int_vec_return_type  int_ret;
+        for (int i = 0; i < trials; i++) {
+            //zero point 
+            ValueGen<int32_t> generator_zp(min_val, max_val);
+            //scale
+            ValueGen<float> generator_sc(1.f, 15.f);
+            //value
+            ValueGen<int32_t> gen(-65535, 65535);
+
+            float multiplier = 1.f/(generator_sc.get()); 
+            auto zero_point_val = generator_zp.get();
+            int index = 0;
+            for (int j = 0; j < vec_type::float_num_vecs(); j++) {
+                //generate vals
+                for (auto& v : unit_int_vec) {
+                    v = c10::qint32( gen.get() );
+                    expected_qint_vals[index] = requantize_from_int<underlying>(multiplier, zero_point_val, v.val_) ;
+                    index++;
+                }
+                int_ret[j] = vqint::loadu(unit_int_vec);
+            }
+            auto expected = vec_type::loadu(expected_qint_vals);
+            auto actual = vec_type::requantize_from_int(int_ret, multiplier, zero_point_val);
+
+            AssertVec256(expected, actual);
+            if (::testing::Test::HasFailure()) {
+
+                std::cout << "reQuantization: {\nvec_exp:";
+                expected.dump();
+                std::cout << "vec_act:";
+                actual.dump();
+                std::cout << "}" << std::endl;
+                return;
+            }
+        } //trials;
+
     }
 
    

@@ -1101,3 +1101,42 @@ local_xor(const T& val0, const T& val1) {
     bit_rep imag_ret = bit_cast<bit_rep>(imag1) ^ bit_cast<bit_rep>(imag2);
     return T(bit_cast<UVT> (real_ret), bit_cast<UVT> (imag_ret));
 }
+
+
+template <typename T>
+T quantize_val(float scale, int64_t zero_point, float value) {
+    int64_t qvalue;
+    constexpr int32_t qmin = std::numeric_limits<T>::min();
+    constexpr int32_t qmax = std::numeric_limits<T>::max();
+    float inv_scale = 1.0f / scale; 
+    qvalue = static_cast<int64_t>(zero_point + at::native::round_impl<float>(value * inv_scale));
+    qvalue = std::max<int64_t>(qvalue, qmin);
+    qvalue = std::min<int64_t>(qvalue, qmax);
+    return static_cast<T>(qvalue);
+}
+
+
+template <typename T>
+T requantize_from_int(float multiplier, int64_t zero_point, int64_t src) {
+    int64_t quantize_down = static_cast<int64_t>(zero_point + std::lrintf(src * static_cast<float>(multiplier)));
+    constexpr int32_t min = std::numeric_limits<T>::min();
+    constexpr int32_t max = std::numeric_limits<T>::max();
+    auto ret = static_cast<T>( std::min<int64_t>(std::max<int64_t>(quantize_down, min), max));
+    return ret;
+}
+
+
+
+
+template <typename T>
+float dequantize_val(float scale, int64_t zero_point, T value) {
+   //when negated scale is used as addition
+#if  defined(CPU_CAPABILITY_VSX)
+    float neg_p =  -(zero_point * scale); 
+    float ret = static_cast<float>(value) * scale  + neg_p; 
+#else 
+    float ret =  (static_cast<float>(value) - zero_point) * scale; 
+#endif   
+    return ret; 
+}
+

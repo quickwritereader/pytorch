@@ -177,7 +177,7 @@ struct Vec256<c10::quint8> {
     // constexpr int32_t min_val = std::numeric_limits<value_type>::min();
     // constexpr int32_t max_val = std::numeric_limits<value_type>::max();
 
-    __vf inverse_scale_v = vec_splats(inverse_scale);
+    __vf vec_inverse = vec_splats(inverse_scale);
     __vf vec_zero_point = vec_splats((float)zero_point);
     // __vui vmin = vec_splats(min_val);
     // __vui vmax = vec_splats(max_val);
@@ -195,31 +195,40 @@ struct Vec256<c10::quint8> {
     __vf vecf6 = vf3.vec0();
     __vf vecf7 = vf3.vec1();
 
-    vecf0 = vec_madd(vecf0, inverse_scale_v, vec_zero_point);
-    vecf1 = vec_madd(vecf1, inverse_scale_v, vec_zero_point);
-    vecf2 = vec_madd(vecf2, inverse_scale_v, vec_zero_point);
-    vecf3 = vec_madd(vecf3, inverse_scale_v, vec_zero_point);
+    vecf0 = vec_mul(vecf0, vec_inverse);
+    vecf1 = vec_mul(vecf1, vec_inverse);
+    vecf2 = vec_mul(vecf2, vec_inverse);
+    vecf3 = vec_mul(vecf3, vec_inverse);
 
-    vecf4 = vec_madd(vecf4, inverse_scale_v, vec_zero_point);
-    vecf5 = vec_madd(vecf5, inverse_scale_v, vec_zero_point);
-    vecf6 = vec_madd(vecf6, inverse_scale_v, vec_zero_point);
-    vecf7 = vec_madd(vecf7, inverse_scale_v, vec_zero_point);
+    vecf4 = vec_mul(vecf4, vec_inverse);
+    vecf5 = vec_mul(vecf5, vec_inverse);
+    vecf6 = vec_mul(vecf6, vec_inverse);
+    vecf7 = vec_mul(vecf7, vec_inverse);
 
-    __vui veci0 = vec_unsigned(vecf0);
-    __vui veci1 = vec_unsigned(vecf1);
-    __vui veci2 = vec_unsigned(vecf2);
-    __vui veci3 = vec_unsigned(vecf3);
+    vecf0 = vec_add(vec_rint(vecf0), vec_zero_point);
+    vecf1 = vec_add(vec_rint(vecf1), vec_zero_point);
+    vecf2 = vec_add(vec_rint(vecf2), vec_zero_point);
+    vecf3 = vec_add(vec_rint(vecf3), vec_zero_point);
 
-    __vui veci4 = vec_unsigned(vecf4);
-    __vui veci5 = vec_unsigned(vecf5);
-    __vui veci6 = vec_unsigned(vecf6);
-    __vui veci7 = vec_unsigned(vecf7);
+    vecf4 = vec_add(vec_rint(vecf4), vec_zero_point);
+    vecf5 = vec_add(vec_rint(vecf5), vec_zero_point);
+    vecf6 = vec_add(vec_rint(vecf6), vec_zero_point);
+    vecf7 = vec_add(vec_rint(vecf7), vec_zero_point);
 
-    // vec_packs CLAMP already
-    __vsh vecshi0 = vec_packsu(veci0, veci1);
-    __vsh vecshi1 = vec_packsu(veci2, veci3);
-    __vsh vecshi2 = vec_packsu(veci4, veci5);
-    __vsh vecshi3 = vec_packsu(veci6, veci7);
+    __vi veci0 = vec_signed(vecf0);
+    __vi veci1 = vec_signed(vecf1);
+    __vi veci2 = vec_signed(vecf2);
+    __vi veci3 = vec_signed(vecf3);
+
+    __vi veci4 = vec_signed(vecf4);
+    __vi veci5 = vec_signed(vecf5);
+    __vi veci6 = vec_signed(vecf6);
+    __vi veci7 = vec_signed(vecf7);
+
+    __vshi vecshi0 = vec_packs(veci0, veci1);
+    __vshi vecshi1 = vec_packs(veci2, veci3);
+    __vshi vecshi2 = vec_packs(veci4, veci5);
+    __vshi vecshi3 = vec_packs(veci6, veci7);
 
     __vchar vec0 = vec_packsu(vecshi0, vecshi1);
     __vchar vec1 = vec_packsu(vecshi2, vecshi3);
@@ -291,7 +300,7 @@ struct Vec256<c10::quint8> {
       float multiplier,
       int32_t zero_point) {
     __vf vec_multiplier = vec_splats(multiplier);
-    __vf vec_zero_point = vec_splats((float)zero_point);
+    __vi vec_zero_point = vec_splats(zero_point);
 
     Vec256<c10::qint32> vi0 = inp[0];
     Vec256<c10::qint32> vi1 = inp[1];
@@ -308,31 +317,50 @@ struct Vec256<c10::quint8> {
     __vf vecf6 = vec_float(vi3.vec0());
     __vf vecf7 = vec_float(vi3.vec1());
 
-    vecf0 = vec_madd(vecf0, vec_multiplier, vec_zero_point);
-    vecf1 = vec_madd(vecf1, vec_multiplier, vec_zero_point);
-    vecf2 = vec_madd(vecf2, vec_multiplier, vec_zero_point);
-    vecf3 = vec_madd(vecf3, vec_multiplier, vec_zero_point);
+    vecf0 = vec_mul(vecf0, vec_multiplier);
+    vecf1 = vec_mul(vecf1, vec_multiplier);
+    vecf2 = vec_mul(vecf2, vec_multiplier);
+    vecf3 = vec_mul(vecf3, vec_multiplier);
 
-    vecf4 = vec_madd(vecf4, vec_multiplier, vec_zero_point);
-    vecf5 = vec_madd(vecf5, vec_multiplier, vec_zero_point);
-    vecf6 = vec_madd(vecf6, vec_multiplier, vec_zero_point);
-    vecf7 = vec_madd(vecf7, vec_multiplier, vec_zero_point);
+    vecf4 = vec_mul(vecf4, vec_multiplier);
+    vecf5 = vec_mul(vecf5, vec_multiplier);
+    vecf6 = vec_mul(vecf6, vec_multiplier);
+    vecf7 = vec_mul(vecf7, vec_multiplier);
 
-    __vui veci0 = vec_unsigned(vecf0);
-    __vui veci1 = vec_unsigned(vecf1);
-    __vui veci2 = vec_unsigned(vecf2);
-    __vui veci3 = vec_unsigned(vecf3);
+    vecf0 = vec_rint(vecf0);
+    vecf1 = vec_rint(vecf1);
+    vecf2 = vec_rint(vecf2);
+    vecf3 = vec_rint(vecf3);
 
-    __vui veci4 = vec_unsigned(vecf4);
-    __vui veci5 = vec_unsigned(vecf5);
-    __vui veci6 = vec_unsigned(vecf6);
-    __vui veci7 = vec_unsigned(vecf7);
+    vecf4 = vec_rint(vecf4);
+    vecf5 = vec_rint(vecf5);
+    vecf6 = vec_rint(vecf6);
+    vecf7 = vec_rint(vecf7);
 
-    // vec_packs CLAMP already
-    __vsh vecshi0 = vec_packsu(veci0, veci1);
-    __vsh vecshi1 = vec_packsu(veci2, veci3);
-    __vsh vecshi2 = vec_packsu(veci4, veci5);
-    __vsh vecshi3 = vec_packsu(veci6, veci7);
+    __vi veci0 = vec_signed(vecf0);
+    __vi veci1 = vec_signed(vecf1);
+    __vi veci2 = vec_signed(vecf2);
+    __vi veci3 = vec_signed(vecf3);
+
+    __vi veci4 = vec_signed(vecf4);
+    __vi veci5 = vec_signed(vecf5);
+    __vi veci6 = vec_signed(vecf6);
+    __vi veci7 = vec_signed(vecf7); 
+    
+    veci0 = vec_add(veci0, vec_zero_point);
+    veci1 = vec_add(veci1, vec_zero_point);
+    veci2 = vec_add(veci2, vec_zero_point);
+    veci3 = vec_add(veci3, vec_zero_point);
+
+    veci4 = vec_add(veci4, vec_zero_point);
+    veci5 = vec_add(veci5, vec_zero_point);
+    veci6 = vec_add(veci6, vec_zero_point);
+    veci7 = vec_add(veci7, vec_zero_point);
+ 
+    __vshi vecshi0 = vec_packs(veci0, veci1);
+    __vshi vecshi1 = vec_packs(veci2, veci3);
+    __vshi vecshi2 = vec_packs(veci4, veci5);
+    __vshi vecshi3 = vec_packs(veci6, veci7);  
 
     __vchar vec0 = vec_packsu(vecshi0, vecshi1);
     __vchar vec1 = vec_packsu(vecshi2, vecshi3);

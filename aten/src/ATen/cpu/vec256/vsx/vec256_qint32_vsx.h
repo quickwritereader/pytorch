@@ -130,16 +130,22 @@ struct Vec256<c10::qint32> {
     const __vi vmin = vec_splats(std::numeric_limits<value_type>::min());
     const __vi vmax = vec_splats(std::numeric_limits<value_type>::max());
     __vf inverse_scale_v = vec_splats(inverse_scale);
-    __vf vec_zero_point = vec_splats((float)zero_point);
+    __vf vec_zero_point = vec_splats((float)(zero_point));
     Vec256<float> vf0 = rhs[0];
+
     __vf vecf0 = vf0.vec0();
-    __vf vecf1 = vf0.vec1();
+    __vf vecf1 = vf0.vec1(); 
+    vecf0 = vec_mul(vecf0, inverse_scale_v);
+    vecf1 = vec_mul(vecf1, inverse_scale_v);
+    vecf0 = vec_add(vec_rint(vecf0), vec_zero_point);
+    vecf1 = vec_add(vec_rint(vecf1), vec_zero_point);     
+    __vi veci0  = vec_signed(vecf0);
+    __vi veci1  = vec_signed(vecf1);
 
-    vecf0 = vec_madd(vecf0, inverse_scale_v, vec_zero_point);
-    vecf1 = vec_madd(vecf1, inverse_scale_v, vec_zero_point);
-
-    __vi veci0 = vec_min(vmax, vec_max(vmin, vec_signed(vecf0)));
-    __vi veci1 = vec_min(vmax, vec_max(vmin, vec_signed(vecf1)));
+    veci0 = vec_max(veci0, vmin);
+    veci1 = vec_max(veci1, vmin);
+    veci0 = vec_min(veci0, vmax);
+    veci1 = vec_min(veci1, vmax);
 
     return {veci0, veci1};
   }
@@ -164,16 +170,29 @@ struct Vec256<c10::qint32> {
       const int_vec_return_type& inp,
       float multiplier,
       int32_t zero_point) {
-    __vf float_multiplier = vec_splats(multiplier);
-    __vi vzero_point = vec_splats(zero_point);
+    const __vi vmin = vec_splats(std::numeric_limits<value_type>::min());
+    const __vi vmax = vec_splats(std::numeric_limits<value_type>::max());        
+    __vf vec_mult = vec_splats(multiplier);
+    __vi vec_zero_point = vec_splats(zero_point);
     Vec256<c10::qint32> vi = inp[0];
-    __vf scaled0 = vec_float(vi.vec0());
-    __vf scaled1 = vec_float(vi.vec1());
-    scaled0 = vec_mul(scaled0, float_multiplier);
-    scaled1 = vec_mul(scaled1, float_multiplier);
-    __vi r0 = vec_add(vec_signed(scaled0), vzero_point);
-    __vi r1 = vec_add(vec_signed(scaled1), vzero_point);
-    return {r0, r1};
+    __vf vecf0 = vec_float(vi.vec0());
+    __vf vecf1 = vec_float(vi.vec1());
+
+    vecf0 = vec_mul(vecf0, vec_mult);
+    vecf1 = vec_mul(vecf1, vec_mult);
+
+    vecf0 = vec_rint(vecf0);
+    vecf1 = vec_rint(vecf1);
+
+    __vi veci0  = vec_add(vec_signed(vecf0),vec_zero_point);
+    __vi veci1  = vec_add(vec_signed(vecf1),vec_zero_point);
+
+    veci0 = vec_max(veci0, vmin);
+    veci1 = vec_max(veci1, vmin);
+    veci0 = vec_min(veci0, vmax);
+    veci1 = vec_min(veci1, vmax);
+
+    return {veci0, veci1};
   }
 
   void dump() const {
