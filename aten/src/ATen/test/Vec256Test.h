@@ -135,6 +135,28 @@ struct CheckWithinDomains {
     T AcceptedError = (T)0;
 };
 
+template <typename T>
+std::ostream& operator<<(std::ostream& stream, const CheckWithinDomains<T>& dmn) {
+    stream << "Domain: ";
+    if (dmn.ArgsDomain.size() > 0) {
+        for (const DomainRange<T>& x : dmn.ArgsDomain) {
+            if (std::is_same<T, int8_t>::value || std::is_same<T, uint8_t>::value) {
+                stream << "\n{ "<< static_cast<int>(x.start)<< ", " << static_cast<int>(x.end) << " }";
+            }
+            else {
+                stream << "\n{ "<< x.start<< ", " << x.end << " }";
+            }
+        }
+    }
+    else {
+        stream << "default range";
+    }
+    if (dmn.CheckWithAcceptance) {
+        stream << "\nError epsilon: " << dmn.AcceptedError;
+    }
+    return stream;
+}
+
 template <class To, class From>
 typename std::enable_if<
     (sizeof(To) == sizeof(From)) && std::is_trivially_copyable<From>::value&&
@@ -171,7 +193,6 @@ std::enable_if_t<!std::is_floating_point<T>::value, bool> check_both_nan(T x,
 template<class T> struct is_complex : std::false_type {};
 template<class T> struct is_complex<std::complex<T>> : std::true_type {};
 
- 
 template<class T>
 bool nearlyEqual(T a, T b, T max_diff) {
     if (isinf(a) && isinf(b)) return true;
@@ -535,7 +556,7 @@ void AssertVec256(T expected, T actual,
 
 template <typename T, typename U = typename CmpHelper<T>::cmpType, bool is_floating_point = std::is_floating_point<U>::value>
 struct ValueGen {
-    std::uniform_int_distribution<U> dis;
+    std::uniform_int_distribution<int64_t> dis;
     std::mt19937 gen;
 
     ValueGen() :ValueGen(std::numeric_limits<U>::min(), std::numeric_limits<U>::max()) {
@@ -543,7 +564,7 @@ struct ValueGen {
     ValueGen(U start, U stop) {
         auto seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
         gen = std::mt19937(seed);
-        dis = std::uniform_int_distribution<U>(start, stop);
+        dis = std::uniform_int_distribution<int64_t>(start, stop);
     }
 
     T get() {
@@ -721,7 +742,7 @@ public:
 
     operator TestingCase<T,U> && () { return std::move(t_case); }
 };
-
+ 
 
 template< typename T,  typename Op1, typename Op2, typename Filter = nullptr_t> 
 void test_unary(
@@ -748,7 +769,7 @@ void test_unary(
         size_t dmn_argc = dmn.ArgsDomain.size();
         UVT start = dmn_argc>0 ? dmn.ArgsDomain[0].start : default_start;
         UVT end = dmn_argc>0 ? dmn.ArgsDomain[0].end : default_end;
-        std::cout << "Check domain: (" << start<<","<<end<<")" << std::endl;
+        std::cout<< dmn<< std::endl;
         ValueGen<VT> generator(start, end);  
         for (int trial = 0; trial < trialCount; trial++) {
 
@@ -855,7 +876,7 @@ void test_binary(
         UVT end0 = dmn_argc > 0 ? dmn.ArgsDomain[0].end : default_end;
         UVT start1 = dmn_argc > 1 ? dmn.ArgsDomain[1].start : default_start;
         UVT end1 = dmn_argc > 1 ? dmn.ArgsDomain[1].end : default_end;
-        std::cout << "Check domain: arg0 (" << start0<<","<<end0<<") arg1 (" << start1<<","<<end1<<")"<< std::endl;        
+        std::cout<< dmn<< std::endl;
         ValueGen<VT> generator0(start0, end0);
         ValueGen<VT> generator1(start1, end1);
         for (int trial = 0; trial < trialCount; trial++) {
@@ -968,6 +989,7 @@ void test_ternary(
         ValueGen<VT> generator0(start0, end0);
         ValueGen<VT> generator1(start1, end1);
         ValueGen<VT> generator2(start2, end2);
+        std::cout<< dmn<< std::endl;
         for (int trial = 0; trial < trialCount; trial++) {
 
             for (int k = 0; k < el_count; k++) {
@@ -1125,9 +1147,6 @@ T requantize_from_int(float multiplier, int64_t zero_point, int64_t src) {
     return ret;
 }
 
-
-
-
 template <typename T>
 float dequantize_val(float scale, int64_t zero_point, T value) {
    //when negated scale is used as addition
@@ -1140,3 +1159,17 @@ float dequantize_val(float scale, int64_t zero_point, T value) {
     return ret; 
 }
 
+template<typename T>
+T relu(const T& val,const T& zero_point)  {
+    return std::max(val, zero_point);
+}
+
+template<typename T>
+T relu6(T val, T zero_point, T q_six) {
+   return std::min<T>( std::max<T>(val, zero_point), q_six); 
+}
+
+template<typename T>
+int32_t widening_subtract(T val, T b) {
+    return static_cast<int32_t>(val) - static_cast<int32_t>(b);
+}

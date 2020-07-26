@@ -150,13 +150,13 @@ struct Vec256<c10::qint32> {
     return {veci0, veci1};
   }
 
-  Vec256<c10::qint32> relu(Vec256<c10::qint32> zero_point) {
+  Vec256<c10::qint32> relu(Vec256<c10::qint32> zero_point) const {
     return {vec_max(_vec0, zero_point._vec0), vec_max(_vec1, zero_point._vec1)};
   }
 
   Vec256<c10::qint32> relu6(
       Vec256<c10::qint32> zero_point,
-      Vec256<c10::qint32> q_six) {
+      Vec256<c10::qint32> q_six) const {
     __vi max0 = vec_max(_vec0, zero_point._vec0);
     __vi max1 = vec_max(_vec1, zero_point._vec1);
     return {vec_min(max0, q_six._vec0), vec_min(max1, q_six._vec1)};

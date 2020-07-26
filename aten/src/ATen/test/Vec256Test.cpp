@@ -995,7 +995,94 @@ namespace {
 
     }
 
-   
+       TYPED_TEST(QuantizationTests, WideningSubtract) {
+        using vec_type = TypeParam;
+        using underlying = ValueType<vec_type>;
+        constexpr bool is_large = sizeof(underlying) > 1;
+        constexpr int trials = is_large ? 4000 : std::numeric_limits<underlying>::max() / 2;
+        constexpr int min_val = std::numeric_limits<underlying>::min();
+        constexpr int max_val = std::numeric_limits<underlying>::max();
+
+        CACHE_ALIGN int32_t unit_exp_vals[vfloat::size()];
+        CACHE_ALIGN underlying qint_vals[vec_type::size()];
+        CACHE_ALIGN underlying qint_b[vec_type::size()];
+        typename vec_type::int_vec_return_type  expected_int_ret;
+        for (int i = 0; i < trials; i++) {
+
+            ValueGen<underlying> generator(min_val, max_val);
+
+            //generate vals
+            for (int j = 0; j < vec_type::size(); j++) {
+                qint_vals[j] = generator.get();
+                qint_b[j] = generator.get();
+            }
+            //get expected
+            int index = 0;
+            for (int j = 0; j < vec_type::int_num_vecs(); j++) {
+                for (auto& v : unit_exp_vals) {
+                    v = widening_subtract(qint_vals[index], qint_b[index]);
+                    index++;
+                }
+                expected_int_ret[j] = vqint::loadu(unit_exp_vals);
+            }
+
+            auto qint_vec = vec_type::loadu(qint_vals);
+            auto qint_vec_b = vec_type::loadu(qint_b);
+            auto actual_int_ret = qint_vec.widening_subtract(qint_vec_b);
+
+            for (int j = 0; j < vec_type::float_num_vecs(); j++) {
+                const auto& expected = expected_int_ret[j];
+                const auto& actual = actual_int_ret[j];
+                AssertVec256(expected, actual);
+                if (::testing::Test::HasFailure()) {
+                    std::cout << "WideningSubtract: {\nvec_exp:" << expected << "\nvec_act:";
+                    std::cout << actual << "\n}" << std::endl;
+                    return;
+                }
+            }
+        } //trials;
+
+    }
+
+    TYPED_TEST(QuantizationTests, Relu) {
+        using vec_type = TypeParam;
+        using VT = ValueType<TypeParam>;
+        constexpr VT min_val = std::numeric_limits<VT>::min();
+        constexpr VT max_val = std::numeric_limits<VT>::max();
+        constexpr VT fake_zp = max_val > 256 ? 65535 : 47;
+        auto test_case =
+            TestingCase<vec_type>::getBuilder()
+            .addDomain(CheckWithinDomains<VT>{ { DomainRange<VT>{min_val,max_val}, DomainRange<VT>{(VT)0, (VT)fake_zp}} });
+
+        test_binary<vec_type>(
+            "relu",
+            RESOLVE_OVERLOAD(relu),
+            [](const vec_type& v0, const vec_type& v1) {
+                return v0.relu(v1);
+            }, test_case);
+    }
+
+    TYPED_TEST(QuantizationTests, Relu6) {
+        using vec_type = TypeParam;
+        using VT = ValueType<TypeParam>;
+        constexpr VT min_val = std::numeric_limits<VT>::min();
+        constexpr VT max_val = std::numeric_limits<VT>::max();
+        constexpr VT fake_zp = max_val > 256 ? 65535 : 47;
+        constexpr VT fake_qsix = max_val > 256 ? fake_zp + 12345 : fake_zp + 32;
+        auto test_case = TestingCase<vec_type>::getBuilder()
+            .addDomain(CheckWithinDomains<VT>{ 
+                { 
+                  DomainRange<VT>{min_val, max_val}, 
+                  DomainRange<VT>{(VT)0, (VT)fake_zp},
+                  DomainRange<VT>{(VT)fake_zp, (VT)fake_qsix}
+                }});
+
+        test_ternary<vec_type>(
+            "relu6", RESOLVE_OVERLOAD(relu6),
+            [](/*const*/ vec_type& v0, const vec_type& v1, const vec_type& v2) {
+                return  v0.relu6( v1, v2);
+            }, test_case);
+    }
 
 #endif
 }  // namespace

@@ -238,12 +238,12 @@ struct Vec256<c10::qint8> {
     return {vec0, vec1};
   }
 
-  Vec256<c10::qint8> __inline_attrs relu(Vec256<c10::qint8> zero_point) {
+  Vec256<c10::qint8> __inline_attrs relu(Vec256<c10::qint8> zero_point) const {
     return {vec_max(_vec0, zero_point._vec0), vec_max(_vec1, zero_point._vec1)};
   }
 
   Vec256<c10::qint8> __inline_attrs
-  relu6(Vec256<c10::qint8> zero_point, Vec256<c10::qint8> q_six) {
+  relu6(Vec256<c10::qint8> zero_point, Vec256<c10::qint8> q_six) const {
     __vchari max0 = vec_max(_vec0, zero_point._vec0);
     __vchari max1 = vec_max(_vec1, zero_point._vec1);
     return {vec_min(max0, q_six._vec0), vec_min(max1, q_six._vec1)};
