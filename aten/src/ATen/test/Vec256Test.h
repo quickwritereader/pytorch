@@ -28,19 +28,23 @@ CACHE_ALIGN #define
     return __VA_ARGS__(std::forward<decltype(args)>(args)...); \
   }
 
- 
+template<typename T>
+using Complex = typename c10::complex<T>;
+
 template <typename T>
 using Vec = typename at::vec256::Vec256<T>;
+
 using vfloat = Vec<float>;
 using vdouble = Vec<double>;
-using vcomplex = Vec<std::complex<float>>;
-using vcomplexDbl = Vec<std::complex<double>>;
+using vcomplex = Vec<Complex<float>>;
+using vcomplexDbl = Vec<Complex<double>>;
 using vlong = Vec<int64_t>;
 using vint = Vec<int32_t>;
 using vshort = Vec<int16_t>;
 using vqint8 = Vec<c10::qint8>;
 using vquint8 = Vec<c10::quint8>;
 using vqint = Vec<c10::qint32>;
+
 
 template <typename T>
 using ValueType = typename T::value_type;
@@ -191,7 +195,7 @@ std::enable_if_t<!std::is_floating_point<T>::value, bool> check_both_nan(T x,
 }
 
 template<class T> struct is_complex : std::false_type {};
-template<class T> struct is_complex<std::complex<T>> : std::true_type {};
+template<class T> struct is_complex<Complex<T>> : std::true_type {};
 
 template<class T>
 bool nearlyEqual(T a, T b, T max_diff) {
@@ -439,10 +443,10 @@ struct CmpHelper<float> {
 };
 
 template<>
-struct CmpHelper<std::complex<double>> {
+struct CmpHelper<Complex<double>> {
     using cmpType = double;
     static constexpr int size() { return 2; }
-    static void bitCheck(const std::complex<double>& act, const std::complex<double>& exp, int i, std::function<std::string(int index)>& get_details) {
+    static void bitCheck(const Complex<double>& act, const Complex<double>& exp, int i, std::function<std::string(int index)>& get_details) {
         using bit_rep = typename BitStr<sizeof(double)>::type;
         bit_rep b_expReal = bit_cast<bit_rep>(exp.real());
         bit_rep b_actReal = bit_cast<bit_rep>(act.real());
@@ -451,7 +455,7 @@ struct CmpHelper<std::complex<double>> {
         bit_rep b_actI = bit_cast<bit_rep>(act.imag());
         ASSERT_EQ(b_expI, b_actI) << (get_details ? get_details(i) : "");
     }
-    static void nearCheck(const std::complex<double>& act, const std::complex<double>& exp, const std::complex<double>& absErr, int i, std::function<std::string(int index)>& get_details) {
+    static void nearCheck(const Complex<double>& act, const Complex<double>& exp, const Complex<double>& absErr, int i, std::function<std::string(int index)>& get_details) {
         if (!(check_both_nan(exp.real(), act.real()))) {
             ASSERT_EQ(nearlyEqual(exp.real(), act.real(), absErr.real()), true) << exp.real() << " " << act.real() << "\n" << (get_details ? get_details(i) : "");
         }
@@ -459,7 +463,7 @@ struct CmpHelper<std::complex<double>> {
             ASSERT_EQ(nearlyEqual(exp.imag(), act.imag(), absErr.real()), true) << exp.imag() << " " << act.imag() << "\n" << (get_details ? get_details(i) : "");
         }
     }
-    static void eqCheck(const std::complex<double>& act, const std::complex<double>& exp, int i, std::function<std::string(int index)>& get_details) {
+    static void eqCheck(const Complex<double>& act, const Complex<double>& exp, int i, std::function<std::string(int index)>& get_details) {
         if (!(check_both_nan(exp.real(), act.real()))) {
             ASSERT_DOUBLE_EQ(exp.real(), act.real()) << (get_details ? get_details(i) : "");
         }
@@ -470,10 +474,10 @@ struct CmpHelper<std::complex<double>> {
 };
 
 template<>
-struct CmpHelper<std::complex<float>> {
+struct CmpHelper<Complex<float>> {
     using cmpType = float;
     static constexpr int size() { return 2; }
-    static void bitCheck(const std::complex<float>& act, const std::complex<float>& exp, int i, std::function<std::string(int index)>& get_details) {
+    static void bitCheck(const Complex<float>& act, const Complex<float>& exp, int i, std::function<std::string(int index)>& get_details) {
         using bit_rep = typename BitStr<sizeof(float)>::type;
         bit_rep b_expReal = bit_cast<bit_rep>(exp.real());
         bit_rep b_actReal = bit_cast<bit_rep>(act.real());
@@ -482,7 +486,7 @@ struct CmpHelper<std::complex<float>> {
         bit_rep b_actI = bit_cast<bit_rep>(act.imag());
         ASSERT_EQ(b_expI, b_actI) << (get_details ? get_details(i) : "");
     }
-    static void nearCheck(const std::complex<float>& act, const std::complex<float>& exp, const std::complex<float>& absErr, int i, std::function<std::string(int index)>& get_details) {
+    static void nearCheck(const Complex<float>& act, const Complex<float>& exp, const Complex<float>& absErr, int i, std::function<std::string(int index)>& get_details) {
         if (!(check_both_nan(exp.real(), act.real()))) {
             ASSERT_EQ(nearlyEqual(exp.real(), act.real(), absErr.real()), true) << exp.real()<<" "<<act.real()<<"\n" << (get_details ? get_details(i) : "");;
         }
@@ -490,7 +494,7 @@ struct CmpHelper<std::complex<float>> {
             ASSERT_EQ(nearlyEqual(exp.imag(), act.imag(), absErr.real()), true) << exp.imag() << " " << act.imag() << "\n" << (get_details ? get_details(i) : "");;
         }
     }
-    static void eqCheck(const std::complex<float>& act, const std::complex<float>& exp, int i, std::function<std::string(int index)>& get_details) {
+    static void eqCheck(const Complex<float>& act, const Complex<float>& exp, int i, std::function<std::string(int index)>& get_details) {
         if (!(check_both_nan(exp.real(), act.real()))) {
             ASSERT_FLOAT_EQ(exp.real(), act.real()) << (get_details ? get_details(i) : "");
         }

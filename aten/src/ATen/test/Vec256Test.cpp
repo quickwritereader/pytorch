@@ -553,7 +553,7 @@ namespace {
         using VT = ValueType<TypeParam>;
         //for complex we will use small range and absError against std implementation
         //because inside our implementation we are using the same type and multiplication easily can become inf
-        // try for example std::complex<float>(1.7852e+38,1.65523e+38)/std::complex<float>(1.74044e+38,1.57524e+38)
+        // try for example Complex<float>(1.7852e+38,1.65523e+38)/Complex<float>(1.74044e+38,1.57524e+38)
         if (is_complex<VT>()) {
             using UVT = UvalueType<TypeParam>;
             auto test_case =
@@ -791,10 +791,10 @@ namespace {
     }
 
     template<>
-    void blend_init<std::complex<float>, 4>(std::complex<float>(&a)[4], std::complex<float>(&b)[4]) {
-        auto add = std::complex<float>(1., 100.);
-        a[0] = std::complex<float>(1., 100.);
-        b[0] = std::complex<float>(5., 1000.);
+    void blend_init<Complex<float>, 4>(Complex<float>(&a)[4], Complex<float>(&b)[4]) {
+        auto add = Complex<float>(1., 100.);
+        a[0] = Complex<float>(1., 100.);
+        b[0] = Complex<float>(5., 1000.);
         for (int i = 1; i < 4; i++) {
             a[i] = a[i - 1] + add;
             b[i] = b[i - 1] + add;
@@ -802,10 +802,10 @@ namespace {
     }
 
     template<>
-    void blend_init<std::complex<double>, 2>(std::complex<double>(&a)[2], std::complex<double>(&b)[2]) {
-        auto add = std::complex<double>(1.0, 100.0);
-        a[0] = std::complex<double>(1.0, 100.0);
-        b[0] = std::complex<double>(3.0, 1000.0);
+    void blend_init<Complex<double>, 2>(Complex<double>(&a)[2], Complex<double>(&b)[2]) {
+        auto add = Complex<double>(1.0, 100.0);
+        a[0] = Complex<double>(1.0, 100.0);
+        b[0] = Complex<double>(3.0, 1000.0);
         a[1] = a[0] + add;
         b[1] = b[0] + add;
     }
@@ -825,7 +825,7 @@ namespace {
 
 
     TEST(ComplexTests, TestComplexFloatImagRealConj) {
-        //vcomplex a = { std::complex<float>(1,2),std::complex<float>(3,4) ,std::complex<float>(5,6) ,std::complex<float>(6,7) };
+        //vcomplex a = { Complex<float>(1,2),Complex<float>(3,4) ,Complex<float>(5,6) ,Complex<float>(6,7) };
         float aa[] = { 1.5488e-28,2.5488e-28,3.5488e-28,4.5488e-28,5.5488e-28,6.5488e-28,7.5488e-28,8.5488e-28 };
         float exp[] = { aa[0],0,aa[2],0,aa[4],0,aa[6],0 }; 
         float exp3[] = { aa[1],0,aa[3],0,aa[5],0,aa[7],0 };
@@ -914,7 +914,7 @@ namespace {
             int32_t zero_point_val = generator.get();
             float scale_zp_premul = -(scale * zero_point_val);
             vfloat vf_scale = vfloat{ scale };
-            vfloat vf_zp = vfloat{ zero_point_val };
+            vfloat vf_zp = vfloat{ static_cast<float>(zero_point_val) };
             vfloat vf_scale_zp = vfloat{ scale_zp_premul };
             //generate vals
             for (auto& x : qint_vals) {
@@ -983,12 +983,8 @@ namespace {
 
             AssertVec256(expected, actual);
             if (::testing::Test::HasFailure()) {
-
-                std::cout << "reQuantization: {\nvec_exp:";
-                expected.dump();
-                std::cout << "vec_act:";
-                actual.dump();
-                std::cout << "}" << std::endl;
+                std::cout << "ReQuantizeFromInt: {\nvec_exp:" << expected << "\nvec_act:";
+                std::cout << actual << "\n}" << std::endl;                
                 return;
             }
         } //trials;
@@ -1083,6 +1079,19 @@ namespace {
                 return  v0.relu6( v1, v2);
             }, test_case);
     }
+
+#if 0
+    //add your simple tests for quick checks
+    TEST(ComplexTests, Playground) {
+        Complex<float> t1 = Complex<float>(-4.48172e+37, 3.24563e+37);
+        vcomplex x = vcomplex{ t1 };
+        vcomplex act =x.abs();
+        std::cout << act << std::endl;
+        std::cout << std::abs(t1) << std::endl;
+        vcomplex exp = vcomplex(std::abs(t1));
+        AssertVec256(act, exp);
+    }
+#endif
 
 #endif
 }  // namespace
