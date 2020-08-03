@@ -175,9 +175,9 @@ namespace {
 
 
     TYPED_TEST(SignManipulation, Absolute) {
-        using vec_type = TypeParam; 
+        using vec_type = TypeParam;
         test_unary<vec_type>(
-            "absolute", RESOLVE_OVERLOAD(std::abs),
+            "absolute", RESOLVE_OVERLOAD(local_abs),
             [](vec_type v) { return v.abs(); }, false,
             RESOLVE_OVERLOAD(filter_int_minimum), false);
     }
@@ -192,18 +192,18 @@ namespace {
     }
 
 
-    TYPED_TEST(Rounding, Round) { 
+    TYPED_TEST(Rounding, Round) {
         using vec_type = TypeParam;
         using UVT = UvalueType<TypeParam>;
         ValueType<vec_type> case1 = -658.5f;
-        ValueType<vec_type> exp1 = -658.f; 
+        ValueType<vec_type> exp1 = -658.f;
         ValueType<vec_type> case2 = -657.5f;
-        ValueType<vec_type> exp2 = -658.f;        
+        ValueType<vec_type> exp2 = -658.f;
         auto test_case =
             TestingCase<vec_type>::getBuilder()
-            .addDomain(CheckWithinDomains<UVT>{ { {-1000, 1000}} }) 
-            .addSpecial({{case1},exp1})
-            .addSpecial({{case2},exp2})
+            .addDomain(CheckWithinDomains<UVT>{ { {-1000, 1000}} })
+            .addSpecial({ {case1},exp1 })
+            .addSpecial({ {case2},exp2 })
             .setTrialCount(64000);
         test_unary<vec_type>(
             "round", RESOLVE_OVERLOAD(at::native::round_impl),
@@ -212,7 +212,7 @@ namespace {
 
     TYPED_TEST(Rounding, Ceil) {
         using vec_type = TypeParam;
-        using UVT = UvalueType<TypeParam>; 
+        using UVT = UvalueType<TypeParam>;
         test_unary<vec_type>(
             "ceil", RESOLVE_OVERLOAD(std::ceil),
             [](vec_type v) { return v.ceil(); });
@@ -239,7 +239,7 @@ namespace {
         using UVT = UvalueType<TypeParam>;
         auto test_case =
             TestingCase<vec_type>::getBuilder()
-            .addDomain(CheckWithinDomains<UVT>{ {{-100, 100}}, true, 1.e-3f})
+            .addDomain(CheckWithinDomains<UVT>{ { {-100, 100}}, true, 1.e-3f})
             .setTrialCount(200);
         test_unary<vec_type>(
             "sqrt", RESOLVE_OVERLOAD(std::sqrt),
@@ -330,7 +330,7 @@ namespace {
         using UVT = UvalueType<TypeParam>;
         auto test_case =
             TestingCase<vec_type>::getBuilder()
-            .addDomain(CheckWithinDomains<UVT>{ { {-88, 88}}, true, 1.e-5f}) 
+            .addDomain(CheckWithinDomains<UVT>{ { {-88, 88}}, true, 1.e-5f})
             .setTrialCount(65536);
         test_unary<vec_type>(
             "cosh", RESOLVE_OVERLOAD(std::cosh),
@@ -386,7 +386,7 @@ namespace {
         using vec_type = TypeParam;
         test_unary<vec_type>(
             "log1p", RESOLVE_OVERLOAD(std::log1p),
-            [](const vec_type& v) { return v.log1p(); }, false, {},true);
+            [](const vec_type& v) { return v.log1p(); }, false, {}, true);
     }
 
     TYPED_TEST(Exponents, Exp) {
@@ -399,7 +399,7 @@ namespace {
     TYPED_TEST(Exponents, Expm1) {
         using vec_type = TypeParam;
         test_unary<vec_type>(
-            "expm1", RESOLVE_OVERLOAD(std::expm1), 
+            "expm1", RESOLVE_OVERLOAD(std::expm1),
             [](const vec_type& v) { return v.expm1(); }, false, {}, true);
     }
 
@@ -414,7 +414,7 @@ namespace {
     TYPED_TEST(ErrorFunctions, Erfc) {
         using vec_type = TypeParam;
         test_unary<vec_type>(
-            "erfc", RESOLVE_OVERLOAD(std::erfc), 
+            "erfc", RESOLVE_OVERLOAD(std::erfc),
             [](const vec_type& v) { return v.erfc(); });
     }
 
@@ -429,7 +429,7 @@ namespace {
         using vec_type = TypeParam;
         test_unary<vec_type>(
             "lgamma", RESOLVE_OVERLOAD(std::lgamma),
-            [](vec_type v) { return v.lgamma(); });
+            [](vec_type v) { return v.lgamma(); }, false, {}, true);
     }
 
     TYPED_TEST(InverseTrigonometricReal, ATan2) {
@@ -454,7 +454,7 @@ namespace {
         using VT = ValueType<TypeParam>;
         constexpr size_t N = vec_type::size() * 2;
         CACHE_ALIGN VT vals[N];
-        CACHE_ALIGN VT interleaved[N]; 
+        CACHE_ALIGN VT interleaved[N];
         ValueGen<VT> generator;
         for (VT& v : vals) {
             v = generator.get();
@@ -506,10 +506,10 @@ namespace {
         using VT = ValueType<TypeParam>;
         test_binary<vec_type>(
             "plus", std::plus<VT>(),
-            [](const vec_type &v0, const vec_type& v1) -> vec_type {
+            [](const vec_type& v0, const vec_type& v1) -> vec_type {
                 return v0 + v1;
             },
-                false, RESOLVE_OVERLOAD(filter_add_overflow), false);
+            false, RESOLVE_OVERLOAD(filter_add_overflow), false);
     }
 
     TYPED_TEST(Arithmetics, Minus) {
@@ -558,7 +558,7 @@ namespace {
             using UVT = UvalueType<TypeParam>;
             auto test_case =
                 TestingCase<vec_type>::getBuilder()
-                .addDomain(CheckWithinDomains<UVT>{ { DomainRange<UVT>{(UVT)-10, (UVT)10}, DomainRange<UVT>{(UVT)-10, (UVT)10}}, true,  (UVT)(1.e-5) });
+                .addDomain(CheckWithinDomains<UVT>{ { DomainRange<UVT>{(UVT)-10, (UVT)10}, DomainRange<UVT>{(UVT)-10, (UVT)10}}, true, (UVT)(1.e-5) });
             test_binary<vec_type>(
                 "division",
                 std::divides<VT>(),
@@ -581,10 +581,10 @@ namespace {
         using vec_type = TypeParam;
         using VT = ValueType<TypeParam>;
         test_binary<vec_type>(
-            "bit_and",  local_and<VT>,
+            "bit_and", local_and<VT>,
             [](const vec_type& v0, const vec_type& v1) { return v0 & v1; }, true);
     }
-    
+
     TYPED_TEST(Bitwise, BitOr) {
         using vec_type = TypeParam;
         using VT = ValueType<TypeParam>;
@@ -706,7 +706,7 @@ namespace {
             });
     }
 
- 
+
     TYPED_TEST(MinMax, Clamp) {
         using vec_type = TypeParam;
         using VT = ValueType<TypeParam>;
@@ -715,9 +715,9 @@ namespace {
             [](const vec_type& v0, const vec_type& v1, const vec_type& v2) {
                 return clamp(v0, v1, v2);
             },
-                false, RESOLVE_OVERLOAD(filter_clamp));
+            false, RESOLVE_OVERLOAD(filter_clamp));
     }
-     
+
 
     TYPED_TEST(BitwiseFloatsAdditional, ZeroMask) {
         using vec_type = TypeParam;
@@ -827,20 +827,20 @@ namespace {
     TEST(ComplexTests, TestComplexFloatImagRealConj) {
         //vcomplex a = { Complex<float>(1,2),Complex<float>(3,4) ,Complex<float>(5,6) ,Complex<float>(6,7) };
         float aa[] = { 1.5488e-28,2.5488e-28,3.5488e-28,4.5488e-28,5.5488e-28,6.5488e-28,7.5488e-28,8.5488e-28 };
-        float exp[] = { aa[0],0,aa[2],0,aa[4],0,aa[6],0 }; 
+        float exp[] = { aa[0],0,aa[2],0,aa[4],0,aa[6],0 };
         float exp3[] = { aa[1],0,aa[3],0,aa[5],0,aa[7],0 };
         float exp4[] = { 1.5488e-28, -2.5488e-28,3.5488e-28,-4.5488e-28,5.5488e-28,-6.5488e-28,7.5488e-28,-8.5488e-28 };
-        auto a = vcomplex::loadu(aa); 
-        auto actual1 = a.real(); 
+        auto a = vcomplex::loadu(aa);
+        auto actual1 = a.real();
         auto actual3 = a.imag();
-        auto actual4 = a.conj(); 
-        std::cout << actual1 << std::endl; 
+        auto actual4 = a.conj();
+        std::cout << actual1 << std::endl;
         std::cout << actual3 << std::endl;
-        std::cout << actual4 << std::endl; 
-        auto expected1 = vcomplex::loadu(exp); 
+        std::cout << actual4 << std::endl;
+        auto expected1 = vcomplex::loadu(exp);
         auto expected3 = vcomplex::loadu(exp3);
-        auto expected4 = vcomplex::loadu(exp4); 
-        AssertVec256(expected1, actual1); 
+        auto expected4 = vcomplex::loadu(exp4);
+        AssertVec256(expected1, actual1);
         AssertVec256(expected3, actual3);
         AssertVec256(expected4, actual4);
     }
@@ -848,7 +848,7 @@ namespace {
 
     TYPED_TEST(QuantizationTests, Quantize) {
         using vec_type = TypeParam;
-        using underlying = ValueType<vec_type>; 
+        using underlying = ValueType<vec_type>;
         constexpr int trials = 4000;
         constexpr int min_val = std::numeric_limits<underlying>::min();
         constexpr int max_val = std::numeric_limits<underlying>::max();
@@ -865,7 +865,7 @@ namespace {
             ValueGen<float> gen(min_val * 2.f, max_val * 2.f);
 
             float scale = generator_sc.get();
-            float inv_scale = 1.0f / static_cast<float>(scale); 
+            float inv_scale = 1.0f / static_cast<float>(scale);
             auto zero_point_val = generator_zp.get();
             int index = 0;
             for (int j = 0; j < vec_type::float_num_vecs(); j++) {
@@ -875,7 +875,7 @@ namespace {
                     expected_qint_vals[index] = quantize_val<underlying>(scale, zero_point_val, v);
                     index++;
                 }
-                float_ret[j] = vfloat::loadu(unit_float_vec); 
+                float_ret[j] = vfloat::loadu(unit_float_vec);
             }
             auto expected = vec_type::loadu(expected_qint_vals);
             auto actual = vec_type::quantize(float_ret, scale, zero_point_val, inv_scale);
@@ -898,19 +898,22 @@ namespace {
     TYPED_TEST(QuantizationTests, DeQuantize) {
         using vec_type = TypeParam;
         using underlying = ValueType<vec_type>;
-        constexpr bool is_large = sizeof(underlying)>1;
-        constexpr int trials = is_large ? 1000 : std::numeric_limits<underlying>::max()/2;
-        constexpr int min_val = is_large ?-1190 : std::numeric_limits<underlying>::min();
-        constexpr int max_val = is_large ? 1199 : std::numeric_limits<underlying>::max();
+        constexpr bool is_large = sizeof(underlying) > 1;
+        constexpr int trials = is_large ? 4000 : std::numeric_limits<underlying>::max() / 2;
+        constexpr int min_val = is_large ? -2190 : std::numeric_limits<underlying>::min();
+        constexpr int max_val = is_large ? 2199 : std::numeric_limits<underlying>::max();
         CACHE_ALIGN float unit_exp_vals[vfloat::size()];
         CACHE_ALIGN underlying qint_vals[vec_type::size()];
         typename vec_type::float_vec_return_type  expected_float_ret;
+#if  defined(CHECK_DEQUANT_WITH_LOW_PRECISION) 
+        std::cout << "Dequant will be tested with relative error " << 1.e-3f << std::endl;
+#endif
         for (int i = 0; i < trials; i++) {
-             
+
             ValueGen<int> generator(min_val, max_val);
             //scale
-            ValueGen<float> generator_sc(1.f, 15.f); 
-            float scale = generator_sc.get(); 
+            ValueGen<float> generator_sc(1.f, 15.f);
+            float scale = generator_sc.get();
             int32_t zero_point_val = generator.get();
             float scale_zp_premul = -(scale * zero_point_val);
             vfloat vf_scale = vfloat{ scale };
@@ -919,10 +922,10 @@ namespace {
             //generate vals
             for (auto& x : qint_vals) {
                 x = generator.get();
-            } 
+            }
             //get expected
             int index = 0;
-            for (int j = 0; j < vec_type::float_num_vecs(); j++) { 
+            for (int j = 0; j < vec_type::float_num_vecs(); j++) {
                 for (auto& v : unit_exp_vals) {
                     v = dequantize_val(scale, zero_point_val, qint_vals[index]);
                     index++;
@@ -933,21 +936,25 @@ namespace {
 
             auto qint_vec = vec_type::loadu(qint_vals);
             auto actual_float_ret = qint_vec.dequantize(vf_scale, vf_zp, vf_scale_zp);
-
             for (int j = 0; j < vec_type::float_num_vecs(); j++) {
                 const auto& expected = expected_float_ret[j];
                 const auto& actual = actual_float_ret[j];
-                AssertVec256(expected, actual );
-                if (::testing::Test::HasFailure()) { 
-                    std::cout << "deQuantization: {\nvec_exp:"<<expected<< "\nvec_act:"; 
-                    std::cout << actual<<"\n}" << std::endl;
+#if  defined(CHECK_DEQUANT_WITH_LOW_PRECISION) 
+                AssertVec256(expected, actual, {}, false, true, 1.e-3f);
+#else
+
+                AssertVec256(expected, actual);
+#endif
+                if (::testing::Test::HasFailure()) {
+                    std::cout << "deQuantization: {\nvec_exp:" << expected << "\nvec_act:";
+                    std::cout << actual << "\n}" << std::endl;
                     return;
                 }
             }
         } //trials;
 
     }
- 
+
     TYPED_TEST(QuantizationTests, ReQuantizeFromInt) {
         using vec_type = TypeParam;
         using underlying = ValueType<vec_type>;
@@ -966,14 +973,14 @@ namespace {
             //value
             ValueGen<int32_t> gen(-65535, 65535);
 
-            float multiplier = 1.f/(generator_sc.get()); 
+            float multiplier = 1.f / (generator_sc.get());
             auto zero_point_val = generator_zp.get();
             int index = 0;
             for (int j = 0; j < vec_type::float_num_vecs(); j++) {
                 //generate vals
                 for (auto& v : unit_int_vec) {
-                    v = c10::qint32( gen.get() );
-                    expected_qint_vals[index] = requantize_from_int<underlying>(multiplier, zero_point_val, v.val_) ;
+                    v = c10::qint32(gen.get());
+                    expected_qint_vals[index] = requantize_from_int<underlying>(multiplier, zero_point_val, v.val_);
                     index++;
                 }
                 int_ret[j] = vqint::loadu(unit_int_vec);
@@ -984,14 +991,14 @@ namespace {
             AssertVec256(expected, actual);
             if (::testing::Test::HasFailure()) {
                 std::cout << "ReQuantizeFromInt: {\nvec_exp:" << expected << "\nvec_act:";
-                std::cout << actual << "\n}" << std::endl;                
+                std::cout << actual << "\n}" << std::endl;
                 return;
             }
         } //trials;
 
     }
 
-       TYPED_TEST(QuantizationTests, WideningSubtract) {
+    TYPED_TEST(QuantizationTests, WideningSubtract) {
         using vec_type = TypeParam;
         using underlying = ValueType<vec_type>;
         constexpr bool is_large = sizeof(underlying) > 1;
@@ -1048,7 +1055,7 @@ namespace {
         constexpr VT fake_zp = max_val > 256 ? 65535 : 47;
         auto test_case =
             TestingCase<vec_type>::getBuilder()
-            .addDomain(CheckWithinDomains<VT>{ { DomainRange<VT>{min_val,max_val}, DomainRange<VT>{(VT)0, (VT)fake_zp}} });
+            .addDomain(CheckWithinDomains<VT>{ { DomainRange<VT>{min_val, max_val}, DomainRange<VT>{(VT)0, (VT)fake_zp}} });
 
         test_binary<vec_type>(
             "relu",
@@ -1066,17 +1073,17 @@ namespace {
         constexpr VT fake_zp = max_val > 256 ? 65535 : 47;
         constexpr VT fake_qsix = max_val > 256 ? fake_zp + 12345 : fake_zp + 32;
         auto test_case = TestingCase<vec_type>::getBuilder()
-            .addDomain(CheckWithinDomains<VT>{ 
-                { 
-                  DomainRange<VT>{min_val, max_val}, 
-                  DomainRange<VT>{(VT)0, (VT)fake_zp},
-                  DomainRange<VT>{(VT)fake_zp, (VT)fake_qsix}
+            .addDomain(CheckWithinDomains<VT>{
+                {
+                    DomainRange<VT>{min_val, max_val},
+                        DomainRange<VT>{(VT)0, (VT)fake_zp},
+                        DomainRange<VT>{(VT)fake_zp, (VT)fake_qsix}
                 }});
 
         test_ternary<vec_type>(
             "relu6", RESOLVE_OVERLOAD(relu6),
             [](/*const*/ vec_type& v0, const vec_type& v1, const vec_type& v2) {
-                return  v0.relu6( v1, v2);
+                return  v0.relu6(v1, v2);
             }, test_case);
     }
 
@@ -1085,7 +1092,7 @@ namespace {
     TEST(ComplexTests, Playground) {
         Complex<float> t1 = Complex<float>(-4.48172e+37, 3.24563e+37);
         vcomplex x = vcomplex{ t1 };
-        vcomplex act =x.abs();
+        vcomplex act = x.abs();
         std::cout << act << std::endl;
         std::cout << std::abs(t1) << std::endl;
         vcomplex exp = vcomplex(std::abs(t1));
