@@ -1039,7 +1039,7 @@ Vec256<c10::quint8> inline maximum(const Vec256<c10::quint8>& a, const Vec256<c1
   return a.maximum(b);
 }
 
-#elif !defined(CPU_CAPABILITY_VSX)
+#else
 
 // NOTE: These are low-performance implementations that we fall back on
 // if we are not building with AVX2. This may not be an issue, because

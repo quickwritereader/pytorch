@@ -1,7 +1,23 @@
 #pragma once
 #include <ATen/cpu/vec256/intrinsics.h>
-
 #include <cstdint>
+
+#define __inline_attrs  __attribute__((__always_inline__))
+using __vd = __vector double;
+using __vf = __vector float;
+using __vchar = __vector unsigned char;
+using __vchari = __vector signed char;
+using __vcharb = __vector bool char;
+using __vllb = __vector bool long long;
+using  __vlli = __vector signed long long;
+using  __vulli = __vector unsigned long long;
+using __vib = __vector bool int;
+using __vui = __vector unsigned  int;
+using __vi = __vector signed int;
+using __vshi = __vector signed short;
+using __vsh = __vector unsigned short;
+using __vshb = __vector bool short;
+
 
 #define DEFINE_MEMBER_OP(op, op_type, func)                              \
   Vec256<op_type> inline __inline_attrs op(const Vec256<op_type>& other) \
@@ -198,6 +214,10 @@ namespace at {
 namespace vec256 {
 // See Note [Acceptable use of anonymous namespace in header]
 namespace {
+// 
+    constexpr int offset0 = 0;
+    constexpr int  offset16 = 16; 
+
 //#Constants
 const __vchar mask_zero_bits = __vchar{128, 128, 128, 128, 128, 128, 128, 128,
                                 128, 128, 128, 128, 96,  64,  32,  0};
