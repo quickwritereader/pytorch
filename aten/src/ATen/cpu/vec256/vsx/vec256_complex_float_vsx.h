@@ -202,6 +202,7 @@ class Vec256<ComplexFlt> {
         vec_vsx_ld(offset0, reinterpret_cast<const float*>(tmp_values)),
         vec_vsx_ld(offset16, reinterpret_cast<const float*>(tmp_values))};
   }
+
   void __inline_attrs store(void* ptr, int count = size()) const {
     if (count == size()) {
       vec_vsx_st(_vec0, offset0, reinterpret_cast<float*>(ptr));
@@ -547,32 +548,35 @@ class Vec256<ComplexFlt> {
   }
 
   Vec256<ComplexFlt> atan2(const Vec256<ComplexFlt>& b) const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false,"not supported for complex numbers");
   }
   Vec256<ComplexFlt> erf() const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false,"not supported for complex numbers");
   }
   Vec256<ComplexFlt> erfc() const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false,"not supported for complex numbers");
   }
 
   Vec256<ComplexFlt> log1p() const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false,"not supported for complex numbers");
   }
 
   Vec256<ComplexFlt> expm1() const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false,"not supported for complex numbers");
   }
 
   Vec256<ComplexFlt> operator<(const Vec256<ComplexFlt>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
+
   Vec256<ComplexFlt> operator<=(const Vec256<ComplexFlt>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
+
   Vec256<ComplexFlt> operator>(const Vec256<ComplexFlt>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
+
   Vec256<ComplexFlt> operator>=(const Vec256<ComplexFlt>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
@@ -580,12 +584,15 @@ class Vec256<ComplexFlt> {
   Vec256<ComplexFlt> lt(const Vec256<ComplexFlt>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
+
   Vec256<ComplexFlt> le(const Vec256<ComplexFlt>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
+
   Vec256<ComplexFlt> gt(const Vec256<ComplexFlt>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
+
   Vec256<ComplexFlt> ge(const Vec256<ComplexFlt>& other) const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }

@@ -280,7 +280,6 @@ class Vec256<ComplexDbl> {
     // = -i*ln(iz + sqrt(1 -z^2))
     // = -i*ln((ai - b) + sqrt(1 - (a + bi)*(a + bi)))
     // = -i*ln((-b + ai) + sqrt(1 - (a**2 - b**2) - 2*abi))
-#if 1
     auto conj = conj_();
     auto b_a = conj.el_swapped();
     auto ab = conj.elwise_mult(b_a);
@@ -292,9 +291,6 @@ class Vec256<ComplexDbl> {
     auto root = el_blend<0x0A>(re, im).sqrt();
     auto ln = (b_a + root).log();
     return ln.el_swapped().conj();
-#else
-    return map(std::asin);
-#endif
   }
 
   Vec256<ComplexDbl> acos() const {
@@ -367,8 +363,7 @@ class Vec256<ComplexDbl> {
     auto a_a = el_mergee();
     // a_a.dump();
     a_a = a_a ^ vd_isign_mask; // a -a
-    auto res_re_im =
-        (abs_() + a_a).elwise_sqrt(); // sqrt(abs + a) sqrt(abs - a)
+    auto res_re_im = (abs_() + a_a).elwise_sqrt(); // sqrt(abs + a) sqrt(abs - a)
     return factor.elwise_mult(res_re_im);
   }
 
@@ -473,21 +468,21 @@ class Vec256<ComplexDbl> {
   }
 
   Vec256<ComplexDbl> log1p() const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false, "not supported for complex numbers");
   }
 
   Vec256<ComplexDbl> atan2(const Vec256<ComplexDbl>& b) const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false, "not supported for complex numbers");
   }
   Vec256<ComplexDbl> erf() const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false, "not supported for complex numbers");
   }
   Vec256<ComplexDbl> erfc() const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false, "not supported for complex numbers");
   }
 
   Vec256<ComplexDbl> expm1() const {
-    AT_ERROR("not supported for complex numbers");
+    TORCH_CHECK(false, "not supported for complex numbers");
   }
 
   Vec256<ComplexDbl> operator<(const Vec256<ComplexDbl>& other) const {
@@ -619,3 +614,4 @@ Vec256<ComplexDbl> inline clamp_max(
 } // namespace
 } // namespace vec256
 } // namespace at
+
