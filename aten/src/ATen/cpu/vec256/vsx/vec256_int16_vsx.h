@@ -345,7 +345,6 @@ Vec256<int16_t> inline minimum(
 }
 
 
-
 } // namespace
 } // namespace vec256
 } // namespace at

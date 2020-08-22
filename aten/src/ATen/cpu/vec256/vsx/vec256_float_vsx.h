@@ -652,4 +652,3 @@ Vec256<float> inline minimum(const Vec256<float>& a, const Vec256<float>& b) {
 } // namespace
 } // namespace vec256
 } // namespace at
-

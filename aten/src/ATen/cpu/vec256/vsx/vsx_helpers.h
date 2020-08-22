@@ -105,9 +105,9 @@ struct SplatType {
   DEFINE_REINTERPRET_CAST_FUNCS(first_type, int16_t, __vshi)
 
 // it can be used to emulate blend faster
-constexpr int blendChoice(int mask, int half1 = 0xF, int half2 = 0xF0) {
-  int none = 0;
-  int both = half1 | half2;
+constexpr int blendChoice(uint32_t mask, uint32_t half1 = 0xF, uint32_t half2 = 0xF0) {
+  uint32_t none = 0;
+  uint32_t both = half1 | half2;
   // clamp it between 0 and both
   mask = mask & both;
   // return  (a._vec0, a._vec1)
@@ -138,12 +138,12 @@ constexpr int blendChoice(int mask, int half1 = 0xF, int half2 = 0xF0) {
 }
 
 // it can be used to emulate blend faster
-constexpr int blendChoiceDbl(int mask) {
+constexpr int blendChoiceDbl(uint32_t mask) {
   // clamp it 0 and 0xF
   return blendChoice(mask, 0x3, 0xC);
 }
 
-constexpr __vib VsxMask1(int mask) {
+constexpr __vib VsxMask1(uint32_t mask) {
   uint32_t g0 = (mask & 1) * 0xffffffff;
   uint32_t g1 = ((mask & 2) >> 1) * 0xffffffff;
   uint32_t g2 = ((mask & 4) >> 2) * 0xffffffff;
@@ -151,23 +151,23 @@ constexpr __vib VsxMask1(int mask) {
   return (__vib){g0, g1, g2, g3};
 }
 
-constexpr __vib VsxMask2(int mask) {
+constexpr __vib VsxMask2(uint32_t mask) {
   uint32_t mask2 = (mask & 0xFF) >> 4;
   return VsxMask1(mask2);
 }
 
-constexpr __vllb VsxDblMask1(int mask) {
+constexpr __vllb VsxDblMask1(uint32_t mask) {
   uint64_t g0 = (mask & 1) * 0xffffffffffffffff;
   uint64_t g1 = ((mask & 2) >> 1) * 0xffffffffffffffff;
   return (__vllb){g0, g1};
 }
 
-constexpr __vllb VsxDblMask2(int mask) {
+constexpr __vllb VsxDblMask2(uint32_t mask) {
   uint32_t mask2 = (mask & 0xF) >> 2;
   return VsxDblMask1(mask2);
 }
 
-constexpr int maskForComplex(int mask) {
+constexpr int maskForComplex(uint32_t mask) {
   mask = mask & 0xF;
   int complex_mask = 0;
   if (mask & 1) complex_mask |= 3;
@@ -177,7 +177,7 @@ constexpr int maskForComplex(int mask) {
   return complex_mask;
 }
 
-constexpr int maskForComplexDbl(int mask) {
+constexpr int maskForComplexDbl(uint32_t mask) {
   mask = mask & 0x3;
   int complex_mask = 0;
   if (mask & 1) complex_mask |= 3;
@@ -185,26 +185,26 @@ constexpr int maskForComplexDbl(int mask) {
   return complex_mask;
 }
 
-constexpr int blendChoiceComplex(int mask) {
+constexpr int blendChoiceComplex(uint32_t mask) {
   return blendChoice(maskForComplex(mask));
 }
 
-constexpr int blendChoiceComplexDbl(int mask) {
+constexpr int blendChoiceComplexDbl(uint32_t mask) {
   return blendChoiceDbl(maskForComplexDbl(mask));
 }
 
-constexpr __vib VsxComplexMask1(int mask) {
+constexpr __vib VsxComplexMask1(uint32_t mask) {
   return VsxMask1(maskForComplex(mask));
 }
 
-constexpr __vib VsxComplexMask2(int mask) {
+constexpr __vib VsxComplexMask2(uint32_t mask) {
   uint32_t mask2 = (mask & 0xF) >> 2;
   return VsxMask1(maskForComplex(mask2));
 }
 
-constexpr __vllb VsxComplexDblMask1(int mask) { return VsxDblMask1(mask); }
+constexpr __vllb VsxComplexDblMask1(uint32_t mask) { return VsxDblMask1(mask); }
 
-constexpr __vllb VsxComplexDblMask2(int mask) {
+constexpr __vllb VsxComplexDblMask2(uint32_t mask) {
   uint32_t mask2 = (mask & 0xF) >> 2;
   return VsxDblMask1(mask2);
 }
@@ -308,10 +308,7 @@ const __vf imag_half = __vf{0.f, 0.5f, 0.f, 0.5f};
 const __vf sqrt2_2 = __vf{0.70710676908493042f, 0.70710676908493042,
                           0.70710676908493042, 0.70710676908493042};
 const __vf pi_2 = __vf{M_PI / 2, 0.0, M_PI / 2, 0.0};
-
-
 const __vf vf_89 = __vf{89.f, 89.f, 89.f, 89.f};
-
 const __vd vd_one = vec_splats(1.0);
 const __vd vd_zero = vec_splats(0.0);
 const __vd vd_log10e_inv = vec_splats(0.43429448190325176);
@@ -324,3 +321,4 @@ const __vd vd_pi_2 = __vd{M_PI / 2.0, 0.0};
 }  // namespace
 }  // namespace vec256
 }  // namespace at
+
