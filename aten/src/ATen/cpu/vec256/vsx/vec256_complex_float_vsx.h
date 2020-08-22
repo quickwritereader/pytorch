@@ -547,6 +547,14 @@ class Vec256<ComplexFlt> {
     return ret & one;
   }
 
+  Vec256<ComplexFlt> hypot(const Vec256<ComplexFlt>& b) const {
+      TORCH_CHECK(false, "not supported for complex numbers");
+  }
+
+  Vec256<ComplexFlt> nextafter(const Vec256<ComplexFlt>& b) const {
+      TORCH_CHECK(false, "not supported for complex numbers");
+  }
+
   Vec256<ComplexFlt> atan2(const Vec256<ComplexFlt>& b) const {
     TORCH_CHECK(false,"not supported for complex numbers");
   }

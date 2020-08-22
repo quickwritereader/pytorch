@@ -615,6 +615,14 @@ class Vec256<float> {
     return mapbi(std::fmod, q);
   }
 
+  Vec256<float> hypot(const Vec256<float>& b) const {
+      return mapbi(std::hypot, b);
+  }
+
+  Vec256<float> nextafter(const Vec256<float>& b) const {
+      return mapbi(std::nextafter, b);
+  }
+
   DEFINE_MEMBER_OP(operator==, float, vec_cmpeq)
   DEFINE_MEMBER_OP(operator!=, float, vec_cmpne)
   DEFINE_MEMBER_OP(operator<, float, vec_cmplt)

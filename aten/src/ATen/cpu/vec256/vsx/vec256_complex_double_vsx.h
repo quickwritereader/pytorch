@@ -467,6 +467,14 @@ class Vec256<ComplexDbl> {
     return loadu(x_tmp);
   }
 
+  Vec256<ComplexDbl> hypot(const Vec256<ComplexDbl>& b) const {
+      TORCH_CHECK(false, "not supported for complex numbers");
+  }
+
+  Vec256<ComplexDbl> nextafter(const Vec256<ComplexDbl>& b) const {
+      TORCH_CHECK(false, "not supported for complex numbers");
+  }
+
   Vec256<ComplexDbl> log1p() const {
     TORCH_CHECK(false, "not supported for complex numbers");
   }
