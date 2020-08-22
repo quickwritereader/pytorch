@@ -3,6 +3,8 @@
 #include <ATen/cpu/vec256/intrinsics.h>
 #include <ATen/cpu/vec256/vec256_base.h>
 #include <ATen/cpu/vec256/vsx/vsx_helpers.h>
+#include <sleef.h>
+
 namespace at {
 namespace vec256 {
 
@@ -214,32 +216,32 @@ class Vec256<double> {
   }
 
   Vec256<double> __inline_attrs acos() const {
-    return map(std::acos);
+     return {Sleef_acosd2_u10vsx(_vec0), Sleef_acosd2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs asin() const {
-    return map(std::asin);
+     return {Sleef_asind2_u10vsx(_vec0), Sleef_asind2_u10vsx(_vec1)};
   }
   Vec256<double> atan() const {
-    return map(std::atan);
+     return {Sleef_atand2_u10vsx(_vec0), Sleef_atand2_u10vsx(_vec1)};
   }
-  Vec256<double> atan2(const Vec256<double>& exp) const {
-    return mapbi(std::atan2, exp);
+  Vec256<double> atan2(const Vec256<double>& b) const {
+     return {Sleef_atan2d2_u10vsx(_vec0, b._vec0), Sleef_atan2d2_u10vsx(_vec1, b._vec1)};
   }
   Vec256<double> erf() const {
-    return map(std::erf);
+     return {Sleef_erfd2_u10vsx(_vec0), Sleef_erfd2_u10vsx(_vec1)};
   }
   Vec256<double> erfc() const {
-    return map(std::erfc);
+     return {Sleef_erfcd2_u15vsx(_vec0), Sleef_erfcd2_u15vsx(_vec1)};
   }
   Vec256<double> __inline_attrs exp() const {
-    return map(std::exp);
+     return {Sleef_expd2_u10vsx(_vec0), Sleef_expd2_u10vsx(_vec1)};
   }
   Vec256<double> expm1() const {
-    return  map(std::expm1);
+     return {Sleef_expm1d2_u10vsx(_vec0), Sleef_expm1d2_u10vsx(_vec1)};
   }
 
   Vec256<double> lgamma() const {
-    return map(std::lgamma);
+     return {Sleef_lgammad2_u10vsx(_vec0), Sleef_lgammad2_u10vsx(_vec1)};
   }
 
   Vec256<double> erfinv() const {
@@ -260,25 +262,25 @@ class Vec256<double> {
   }
 
   Vec256<double> __inline_attrs log() const {
-    return map(std::log);
+     return {Sleef_logd2_u10vsx(_vec0), Sleef_logd2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs log10() const {
-    return map(std::log10);
+     return {Sleef_log10d2_u10vsx(_vec0), Sleef_log10d2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs log1p() const {
-    return map(std::log1p);
+     return {Sleef_log1pd2_u10vsx(_vec0), Sleef_log1pd2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs log2() const {
-    return map(std::log2);
+     return {Sleef_log2d2_u10vsx(_vec0), Sleef_log2d2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs ceil() const {
     return {vec_ceil(_vec0), vec_ceil(_vec1)};
   }
   Vec256<double> __inline_attrs cos() const {
-    return map(std::cos);
+     return {Sleef_cosd2_u10vsx(_vec0), Sleef_cosd2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs cosh() const {
-    return map(std::cosh);
+     return {Sleef_coshd2_u10vsx(_vec0), Sleef_coshd2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs floor() const {
     return {vec_floor(_vec0), vec_floor(_vec1)};
@@ -290,16 +292,16 @@ class Vec256<double> {
     return {vec_rint(_vec0), vec_rint(_vec1)};
   }
   Vec256<double> __inline_attrs sin() const {
-    return map(std::sin);
+     return {Sleef_sind2_u10vsx(_vec0), Sleef_sind2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs sinh() const {
-    return map(std::sinh);
+     return {Sleef_sinhd2_u10vsx(_vec0), Sleef_sinhd2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs tan() const {
-    return map(std::tan);
+     return {Sleef_tand2_u10vsx(_vec0), Sleef_tand2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs tanh() const {
-    return map(std::tanh);
+     return {Sleef_tanhd2_u10vsx(_vec0), Sleef_tanhd2_u10vsx(_vec1)};
   }
   Vec256<double> __inline_attrs trunc() const {
     return {vec_trunc(_vec0), vec_trunc(_vec1)};
@@ -321,19 +323,19 @@ class Vec256<double> {
     return sqrt().reciprocal();
   }
 
-  Vec256<double> __inline_attrs pow(const Vec256<double>& exp) const {
-    return mapbi(std::pow, exp);
+  Vec256<double> __inline_attrs pow(const Vec256<double>& b) const {
+     return {Sleef_powd2_u10vsx(_vec0, b._vec0), Sleef_powd2_u10vsx(_vec1, b._vec1)};
   }
-  Vec256<double> __inline_attrs fmod(const Vec256<double>& q) const {
-    return mapbi(std::fmod, q);
+  Vec256<double> __inline_attrs fmod(const Vec256<double>& b) const {
+     return {Sleef_fmodd2_vsx(_vec0, b._vec0),Sleef_fmodd2_vsx(_vec1, b._vec1)};
   }
 
   Vec256<double> hypot(const Vec256<double>& b) const {
-      return mapbi(std::hypot, b);
+     return {Sleef_hypotd2_u05vsx(_vec0, b._vec0), Sleef_hypotd2_u05vsx(_vec1, b._vec1)};
   }
 
   Vec256<double> nextafter(const Vec256<double>& b) const {
-      return mapbi(std::nextafter, b);
+     return {Sleef_nextafterd2_vsx(_vec0, b._vec0), Sleef_nextafterd2_vsx(_vec1, b._vec1)};
   }
 
   DEFINE_MEMBER_OP(operator==, double, vec_cmpeq)

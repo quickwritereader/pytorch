@@ -3,6 +3,7 @@
 #include <ATen/cpu/vec256/intrinsics.h>
 #include <ATen/cpu/vec256/vec256_base.h>
 #include <ATen/cpu/vec256/vsx/vsx_helpers.h>
+#include <sleef.h>
 namespace at {
 namespace vec256 {
 // See Note [Acceptable use of anonymous namespace in header]
@@ -253,26 +254,27 @@ class Vec256<float> {
   }
 
   Vec256<float> __inline_attrs acos() const {
-    return map(std::acos);
+     return {Sleef_acosf4_u10vsx(_vec0), Sleef_acosf4_u10vsx(_vec1)};
   }
   Vec256<float> __inline_attrs asin() const {
-    return map(std::asin);
+     return {Sleef_asinf4_u10vsx(_vec0), Sleef_asinf4_u10vsx(_vec1)};
   }
   Vec256<float> atan() const {
-    return map(std::atan);
+     return {Sleef_atanf4_u10vsx(_vec0), Sleef_atanf4_u10vsx(_vec1)};
   }
-  Vec256<float> atan2(const Vec256<float>& exp) const {
-    return mapbi(std::atan2, exp);
+  Vec256<float> atan2(const Vec256<float>& b) const {
+     return {Sleef_atan2f4_u10vsx(_vec0, b._vec0), Sleef_atan2f4_u10vsx(_vec1, b._vec1)};
   }
 
   Vec256<float> lgamma() const {
-    return map(std::lgamma);
+     return {Sleef_lgammaf4_u10vsx(_vec0), Sleef_lgammaf4_u10vsx(_vec1)};
   }
   Vec256<float> erf() const {
-    return map(std::erf);
+     return {Sleef_erff4_u10vsx(_vec0), Sleef_erff4_u10vsx(_vec1)};
   }
+
   Vec256<float> erfc() const {
-    return map(std::erfc);
+     return {Sleef_erfcf4_u15vsx(_vec0), Sleef_erfcf4_u15vsx(_vec1)};
   }
 
   Vec256<float> erfinv() const {
@@ -544,7 +546,7 @@ class Vec256<float> {
     return result | sign_bit;
   }
   Vec256<float> __inline_attrs tan() const {
-    return map(std::tan);
+     return {Sleef_tanf4_u10vsx(_vec0), Sleef_tanf4_u10vsx(_vec1)};
   }
   Vec256<float> __inline_attrs tanh() const {
     auto x = *this;
@@ -611,16 +613,16 @@ class Vec256<float> {
     return blendv(out1, one, (exp_abs == zero));
   }
 
-  Vec256<float> fmod(const Vec256<float>& q) const {
-    return mapbi(std::fmod, q);
+  Vec256<float> fmod(const Vec256<float>& b) const {
+     return {Sleef_fmodf4_vsx(_vec0, b._vec0),Sleef_fmodf4_vsx(_vec1, b._vec1)};
   }
 
   Vec256<float> hypot(const Vec256<float>& b) const {
-      return mapbi(std::hypot, b);
+     return {Sleef_hypotf4_u05vsx(_vec0, b._vec0), Sleef_hypotf4_u05vsx(_vec1, b._vec1)};
   }
 
   Vec256<float> nextafter(const Vec256<float>& b) const {
-      return mapbi(std::nextafter, b);
+     return {Sleef_nextafterf4_vsx(_vec0, b._vec0), Sleef_nextafterf4_vsx(_vec1, b._vec1)};
   }
 
   DEFINE_MEMBER_OP(operator==, float, vec_cmpeq)
