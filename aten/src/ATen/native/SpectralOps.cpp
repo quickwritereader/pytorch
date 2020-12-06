@@ -11,6 +11,7 @@
 #include <ATen/NativeFunctions.h>
 #include <ATen/detail/CUDAHooksInterface.h>
 #include <ATen/native/SpectralOpsUtils.h>
+#include <ATen/native/TensorIterator.h>
 
 #include <algorithm>
 #include <vector>
@@ -203,19 +204,129 @@ Tensor fft_c2c(Tensor input, c10::optional<int64_t> n_opt,
   return out;
 }
 
+// Dimensions to transform, and the signal shape in those dimensions
+struct ShapeAndDims {
+  DimVector shape, dim;
+};
+
+// Pre-process n-dimensional fft's `s` and `dim` arguments.
+// Wraps dimensions and applies defaulting behavior.
+// Also checks transform dims are unique and transform shape is non-empty.
+ShapeAndDims canonicalize_fft_shape_and_dim_args(
+    Tensor input, c10::optional<IntArrayRef> shape, c10::optional<IntArrayRef> dim) {
+  const int64_t input_dim = input.dim();
+  const IntArrayRef input_sizes = input.sizes();
+  ShapeAndDims ret;
+
+  if (dim) {
+    ret.dim.resize(dim->size());
+    std::copy(dim->begin(), dim->end(), ret.dim.begin());
+    maybe_wrap_dims(ret.dim, input_dim);
+
+    // Check dims are unique
+    DimVector copy = ret.dim;
+    std::sort(copy.begin(), copy.end());
+    auto duplicate = std::adjacent_find(copy.begin(), copy.end());
+    TORCH_CHECK(duplicate == copy.end(), "FFT dims must be unique");
+  }
+
+  if (shape) {
+    // Has shape, may have dim
+    TORCH_CHECK(!dim || dim->size() == shape->size(),
+                "When given, dim and shape arguments must have the same length");
+    TORCH_CHECK(shape->size() <= input_dim,
+                "Got shape with ", shape->size(), " values but input tensor "
+                "only has ", input_dim, " dimensions.");
+    const int64_t transform_ndim = shape->size();
+    // If shape is given, dims defaults to the last shape.size() dimensions
+    if (!dim) {
+      ret.dim.resize(transform_ndim);
+      std::iota(ret.dim.begin(), ret.dim.end(), input_dim - transform_ndim);
+    }
+
+    // Translate shape of -1 to the default length
+    ret.shape.resize(transform_ndim);
+    for (int64_t i = 0; i < transform_ndim; ++i) {
+      const auto n = (*shape)[i];
+      ret.shape[i] = n == -1 ? input_sizes[ret.dim[i]] : n;
+    }
+  } else if (!dim) {
+    // No shape, no dim
+    ret.dim.resize(input_dim);
+    std::iota(ret.dim.begin(), ret.dim.end(), int64_t{0});
+    ret.shape.resize(input_dim);
+    std::copy(input_sizes.begin(), input_sizes.end(), ret.shape.begin());
+  } else {
+    // No shape, has dim
+    ret.shape.resize(ret.dim.size());
+    for (int64_t i = 0; i < ret.dim.size(); ++i) {
+      ret.shape[i] = input_sizes[ret.dim[i]];
+    }
+  }
+
+  for (int64_t i = 0; i < ret.shape.size(); ++i) {
+    TORCH_CHECK(ret.shape[i] > 0,
+                "Invalid number of data points (", ret.shape[i], ") specified");
+  }
+
+  return ret;
+}
+
+// Complex to complex n-dimensional fft
+Tensor fftn_c2c(
+    const Tensor& input, IntArrayRef shape, IntArrayRef dim,
+    c10::optional<std::string> norm_str, bool forward) {
+  TORCH_CHECK(input.is_complex(), "Expected a complex input tensor to FFT");
+  const auto input_dim = input.dim();
+
+  Tensor x = resize_fft_input(input, dim, shape);
+  x = at::view_as_real(x);
+
+  const int64_t transform_ndim = dim.size();
+  const auto norm = norm_from_string(norm_str, forward);
+  // _fft_with_size only supports 3 dimensions being transformed at a time.
+  // This limit is inherited from cuFFT.
+  constexpr int64_t max_signal_ndim = 3;
+
+  // Transform n dimensions, up to 3 at a time
+  // TODO: rewrite _fft_with_size to transform more than 3 dimensions at once.
+  for (int64_t i = 0; i < transform_ndim; i += max_signal_ndim) {
+    const int64_t signal_ndim = std::min(transform_ndim - i, max_signal_ndim);
+    DimVector source_dim(signal_ndim);
+    DimVector dest_dim(signal_ndim);
+
+    for (int64_t j = 0; j < signal_ndim; ++j) {
+      source_dim[j] = dim[i + j];
+      dest_dim[j] = j + (input_dim - signal_ndim);
+    }
+
+    // _fft operates on up-to the last 3 dims, so move selected dims to the end
+    x = at::movedim(x, source_dim, dest_dim);
+
+    x = _fft(x, signal_ndim, /*complex_input=*/true, /*complex_output=*/true,
+             /*inverse=*/!forward, /*signal_sizes=*/{}, /*normalization=*/norm,
+             /*onesided=*/false);
+
+    // Move transform dims back to their original order
+    x = at::movedim(x, dest_dim, source_dim);
+  }
+
+  return at::view_as_complex(x);
+}
+
 }
 
 // torch.fft.fft, analogous to NumPy's numpy.fft.fft
 Tensor fft_fft(const Tensor& self, c10::optional<int64_t> n, int64_t dim,
                c10::optional<std::string> norm) {
-  return self.is_complex() ? 
+  return self.is_complex() ?
     fft_c2c(self, n, dim, norm, /*forward=*/true) :
     fft_r2c(self, n, dim, norm, /*forward=*/true, /*onesided=*/false);
 }
 
 Tensor fft_ifft(const Tensor& self, c10::optional<int64_t> n, int64_t dim,
                 c10::optional<std::string> norm) {
-  return self.is_complex() ? 
+  return self.is_complex() ?
     fft_c2c(self, n, dim, norm, /*forward=*/false) :
     fft_r2c(self, n, dim, norm, /*forward=*/false, /*onesided=*/false);
 }
@@ -238,6 +349,148 @@ Tensor fft_hfft(const Tensor& self, c10::optional<int64_t> n, int64_t dim,
 Tensor fft_ihfft(const Tensor& self, c10::optional<int64_t> n, int64_t dim,
                  c10::optional<std::string> norm) {
   return fft_r2c(self, n, dim, norm, /*forward=*/false, /*onesided=*/true);
+}
+
+Tensor fft_fftn(const Tensor& self, c10::optional<IntArrayRef> s,
+                c10::optional<IntArrayRef> dim,
+                c10::optional<std::string> norm) {
+  auto desc = canonicalize_fft_shape_and_dim_args(self, s, dim);
+  // TODO: For real input, perform rfftn then mirror with conjugate symmetry
+  Tensor input = promote_tensor_fft(self, /*require_complex=*/true);
+  return fftn_c2c(input, desc.shape, desc.dim, norm, /*forward=*/true);
+}
+
+Tensor fft_ifftn(const Tensor& self, c10::optional<IntArrayRef> s,
+                c10::optional<IntArrayRef> dim,
+                c10::optional<std::string> norm) {
+  auto desc = canonicalize_fft_shape_and_dim_args(self, s, dim);
+  Tensor input = promote_tensor_fft(self, /*require_complex=*/true);
+  return fftn_c2c(input, desc.shape, desc.dim, norm, /*forward=*/false);
+}
+
+Tensor fft_rfftn(const Tensor& self, c10::optional<IntArrayRef> s,
+                c10::optional<IntArrayRef> dim,
+                c10::optional<std::string> norm) {
+  auto desc = canonicalize_fft_shape_and_dim_args(self, s, dim);
+  TORCH_CHECK(desc.shape.size() > 0, "rfftn must transform at least one axis");
+
+  const auto last_dim = desc.dim.back();
+  const auto last_shape = desc.shape.back();
+  desc.shape.pop_back();
+  desc.dim.pop_back();
+
+  // rfft on last dim to get hermitian complex shape
+  auto x = native::fft_rfft(self, last_shape, last_dim, norm);
+  // Normal fft on remaining dims
+  return fftn_c2c(x, desc.shape, desc.dim, norm, /*forward=*/true);
+}
+
+Tensor fft_irfftn(const Tensor& self, c10::optional<IntArrayRef> s,
+                c10::optional<IntArrayRef> dim,
+                c10::optional<std::string> norm) {
+  auto desc = canonicalize_fft_shape_and_dim_args(self, s, dim);
+  TORCH_CHECK(desc.shape.size() > 0, "irfftn must transform at least one axis");
+
+  const auto last_dim = desc.dim.back();
+  const auto last_shape = [&]() -> c10::optional<int64_t> {
+    // If shape is defaulted in the last dimension,
+    // pass nullopt to irfft and let it calculate the default size
+    if (!s.has_value() || (s->back() == -1)) {
+      return c10::nullopt;
+    }
+    return desc.shape.back();
+  }();
+  desc.shape.pop_back();
+  desc.dim.pop_back();
+
+  // Normal ifft for all but last dim
+  Tensor x = promote_tensor_fft(self, /*require_complex=*/true);
+   x = fftn_c2c(x, desc.shape, desc.dim, norm, /*forward=*/false);
+  // Then 1d irfft on last dim to get real output
+  return native::fft_irfft(x, last_shape, last_dim, norm);
+}
+
+Tensor fft_fft2(const Tensor& self, c10::optional<IntArrayRef> s,
+                IntArrayRef dim, c10::optional<std::string> norm) {
+  return native::fft_fftn(self, s, dim, std::move(norm));
+}
+
+Tensor fft_ifft2(const Tensor& self, c10::optional<IntArrayRef> s,
+                IntArrayRef dim, c10::optional<std::string> norm) {
+  return native::fft_ifftn(self, s, dim, std::move(norm));
+}
+
+Tensor fft_rfft2(const Tensor& self, c10::optional<IntArrayRef> s,
+                IntArrayRef dim, c10::optional<std::string> norm) {
+  return native::fft_rfftn(self, s, dim, std::move(norm));
+}
+
+Tensor fft_irfft2(const Tensor& self, c10::optional<IntArrayRef> s,
+                  IntArrayRef dim, c10::optional<std::string> norm) {
+  return native::fft_irfftn(self, s, dim, std::move(norm));
+}
+
+Tensor fft_fftfreq(int64_t n, double d, const TensorOptions& options) {
+  ScalarType dtype = typeMetaToScalarType(options.dtype());
+  TORCH_CHECK(at::isFloatingType(dtype) || at::isComplexType(dtype),
+              "fftfreq requires a floating point or complex dtype");
+  // TODO: arange doesn't have complex support
+  Tensor result = native::arange(n, options);
+  auto right_slice = result.slice(0, (n + 1) / 2, 0);
+  at::arange_out(right_slice, -(n/2), 0, 1);
+  result.mul_(1.0 / (n * d));  // Slightly faster than div_(n*d)
+  return result;
+}
+
+Tensor fft_rfftfreq(int64_t n, double d, const TensorOptions& options) {
+  ScalarType dtype = typeMetaToScalarType(options.dtype());
+  TORCH_CHECK(at::isFloatingType(dtype) || at::isComplexType(dtype),
+              "rfftfreq requires a floating point or complex dtype");
+  // TODO: arange doesn't have complex support
+  Tensor result = native::arange(n/2 + 1, options);
+  result.mul_(1.0 / (n * d));  // Slightly faster than div_(n*d)
+  return result;
+}
+
+// If an array dim is specified, wraps them according to self.dim().
+// Otherwise returns a vector of all dims.
+DimVector default_alldims(const Tensor& self, c10::optional<IntArrayRef> dim_opt) {
+  DimVector dim;
+  if (dim_opt) {
+    IntArrayRef dim_unwrapped = *dim_opt;
+    dim.resize(dim_unwrapped.size());
+    for (int64_t i = 0; i < dim.size(); ++i) {
+      dim[i] = maybe_wrap_dim(dim_unwrapped[i], self.dim());
+    }
+  } else {
+    dim.resize(self.dim());
+    std::iota(dim.begin(), dim.end(), 0);
+  }
+  return dim;
+}
+
+Tensor fft_fftshift(const Tensor& x, c10::optional<IntArrayRef> dim_opt) {
+  auto dim = default_alldims(x, dim_opt);
+
+  IntArrayRef x_sizes = x.sizes();
+  DimVector shift(dim.size());
+  for (int64_t i = 0; i < dim.size(); ++i) {
+    shift[i] = x_sizes[dim[i]] / 2;
+  }
+
+  return at::roll(x, shift, dim);
+}
+
+Tensor fft_ifftshift(const Tensor& x, c10::optional<IntArrayRef> dim_opt) {
+  auto dim = default_alldims(x, dim_opt);
+
+  IntArrayRef x_sizes = x.sizes();
+  DimVector shift(dim.size());
+  for (int64_t i = 0; i < dim.size(); ++i) {
+    shift[i] = (x_sizes[dim[i]] + 1) / 2;
+  }
+
+  return at::roll(x, shift, dim);
 }
 
 
@@ -392,21 +645,21 @@ void _cufft_clear_plan_cache(int64_t device_index) {
   detail::getCUDAHooks().cuFFTClearPlanCache(device_index);
 }
 
-Tensor fft(const Tensor& self, const int64_t signal_ndim, const bool normalized) {
+static Tensor fft(const Tensor& self, const int64_t signal_ndim, const bool normalized) {
   return _fft(self, signal_ndim, /* complex_input */ true,
               /* complex_output */ true, /* inverse */ false, {},
               normalized ? fft_norm_mode::by_root_n : fft_norm_mode::none,
               /* onesided */ false);
 }
 
-Tensor ifft(const Tensor& self, const int64_t signal_ndim, const bool normalized) {
+static Tensor ifft(const Tensor& self, const int64_t signal_ndim, const bool normalized) {
   return _fft(self, signal_ndim, /* complex_input */ true,
               /* complex_output */ true, /* inverse */ true, {},
               normalized ? fft_norm_mode::by_root_n : fft_norm_mode::by_n,
               /* onesided */ false);
 }
 
-Tensor rfft(const Tensor& self, const int64_t signal_ndim, const bool normalized,
+static Tensor rfft(const Tensor& self, const int64_t signal_ndim, const bool normalized,
             const bool onesided) {
   return _fft(self, signal_ndim, /* complex_input */ false,
               /* complex_output */ true, /* inverse */ false, {},
@@ -414,7 +667,7 @@ Tensor rfft(const Tensor& self, const int64_t signal_ndim, const bool normalized
               onesided);
 }
 
-Tensor irfft(const Tensor& self, const int64_t signal_ndim, const bool normalized,
+static Tensor irfft(const Tensor& self, const int64_t signal_ndim, const bool normalized,
              const bool onesided,  IntArrayRef signal_sizes) {
   return _fft(self, signal_ndim, /* complex_input */ true,
               /* complex_output */ false, /* inverse */ true, signal_sizes,
@@ -463,8 +716,10 @@ Tensor stft(const Tensor& self, const int64_t n_fft, const optional<int64_t> hop
   const bool return_complex = return_complexOpt.value_or(
       self.is_complex() || (window.defined() && window.is_complex()));
   if (!return_complexOpt && !return_complex) {
-    TORCH_WARN("stft will return complex tensors by default in future, use"
-               " return_complex=False to preserve the current output format.");
+    TORCH_WARN_ONCE("stft will require the return_complex parameter be explicitly "
+                    " specified in a future PyTorch release. Use return_complex=False "
+                    " to preserve the current behavior or return_complex=True to return "
+                    " a complex output.");
   }
 
   if (!at::isFloatingType(self.scalar_type()) && !at::isComplexType(self.scalar_type())) {
@@ -722,5 +977,98 @@ Tensor istft(const Tensor& self, const int64_t n_fft, const optional<int64_t> ho
       self, n_fft, hop_lengthOpt, win_lengthOpt, window, center, normalized,
       onesidedOpt, lengthOpt, /*return_complex=*/false);
 }
+
+void _fft_fill_with_conjugate_symmetry_(const Tensor& input, IntArrayRef dim_) {
+  const auto input_sizes = input.sizes();
+  const auto input_strides = input.strides();
+  TORCH_CHECK(dim_.size() > 0);
+  DimVector dim(dim_.begin(), dim_.end());
+  at::maybe_wrap_dims(dim, input_strides.size());
+
+  if (input.numel() == 0 || input_sizes[dim.back()] <= 2) {
+    return;  // No elements need writing
+  }
+
+  // Small dimensions may be treated as batch dims since they don't get mirrored
+  dim.erase(
+      std::remove_if(dim.begin(), dim.end(), [&](int64_t dim) {
+        return (input_sizes[dim] <= 2);
+      }),
+      dim.end());
+
+  // Use TensorIterator to coalesce batch dimensions
+  // NOTE: Can't use TensorIterator loops because we need negative strides
+  auto iter = TensorIteratorConfig()
+      .add_output(input)
+      .add_input(input)
+      .resize_outputs(false)
+      .declare_static_shape(input_sizes, dim)
+      .build();
+
+  const auto iter_strides = iter.strides(0);
+  const auto iter_sizes = iter.shape();
+  const auto ndim = iter_strides.size() + dim.size();
+  DimVector in_strides(ndim), signal_half_sizes(ndim);
+  // Take coalesced batch dimensions from TensorIterator
+  std::copy(iter_strides.begin(), iter_strides.end(), in_strides.begin());
+  std::copy(iter_sizes.begin(), iter_sizes.end(), signal_half_sizes.begin());
+
+  // Take transformed dimensions directly from the input
+  const auto element_size = iter.element_size(0);
+  for (int64_t i = 0; i < dim.size(); ++i) {
+    // Convert to byte strides to match TensorIterator
+    in_strides[iter_strides.size() + i] = input_strides[dim[i]] * element_size;
+    signal_half_sizes[iter_strides.size() + i] = input_sizes[dim[i]];
+  }
+
+  // For the last dimension, use negative strides to perform the mirroring
+  signal_half_sizes.back() = (input_sizes[dim.back()] - 1) / 2;
+  auto out_strides = in_strides;
+  out_strides.back() *= -1;
+
+  auto* data_ptr = static_cast<char*>(input.data_ptr());
+  const auto* in_data = data_ptr + input_strides[dim.back()] * element_size;
+  auto* out_data = data_ptr + (
+      input_strides[dim.back()] * (input_sizes[dim.back()] - 1) * element_size);
+
+  // Reorder dimensions by stride to maximize data locality
+  DimVector dim_permute(ndim);
+  std::iota(dim_permute.begin(), dim_permute.end(), 0);
+  std::sort(dim_permute.begin(), dim_permute.end(),
+      [&](auto dim1, auto dim2) {
+        return in_strides[dim1] < in_strides[dim2];
+      });
+
+  DimVector temp(ndim);
+  auto apply_permutation = [&] (DimVector & vec) {
+    // Do permuted index copy into a temporary, then copy back
+    for (int64_t i = 0; i < ndim; ++i) {
+      temp[i] = vec[dim_permute[i]];
+    }
+    vec = temp;
+  };
+  apply_permutation(in_strides);
+  apply_permutation(out_strides);
+  apply_permutation(signal_half_sizes);
+
+  // Find dims.slice(dims.size() - 1) in the new permuted order.
+  // These are the dimensions that need explicit Hermitian mirroring
+  DimVector mirror_dims;
+  mirror_dims.reserve(dim.size() - 1);
+  for (int64_t i = 0; i < ndim; ++i) {
+    if (dim_permute[i] >= iter_strides.size() &&  // Not a batch dimension
+        dim_permute[i] != ndim - 1) {  // Not the last dim, which is mirrored separately with negative strides
+      mirror_dims.push_back(i);
+    }
+  }
+  TORCH_INTERNAL_ASSERT(mirror_dims.size() == dim.size() - 1);
+
+  // Dispatch to CPU or CUDA kernel to do the actual conjugate mirroring
+  fft_fill_with_conjugate_symmetry_stub(
+      input.device().type(), input.scalar_type(),
+      mirror_dims, signal_half_sizes, in_strides, in_data, out_strides, out_data);
+}
+
+DEFINE_DISPATCH(fft_fill_with_conjugate_symmetry_stub);
 
 }} // at::native
